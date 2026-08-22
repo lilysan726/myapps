@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>マイアプリ</title>
+<style>
+  :root{--bg:#0f1216;--panel:#171b21;--line:#2a323c;--text:#e8edf2;--muted:#9aa7b4;--accent:#4ea1ff;}
+  @media (prefers-color-scheme:light){:root{--bg:#f4f6f9;--panel:#fff;--line:#e2e8f0;--text:#1a2230;--muted:#5a6b7d;}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.6;padding:24px 16px;
+    padding-top:calc(env(safe-area-inset-top) + 24px);max-width:560px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+  a.app{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);
+    border-radius:16px;padding:16px 18px;margin-bottom:12px;text-decoration:none;color:var(--text)}
+  a.app:active{opacity:.7}
+  .ic{font-size:30px;flex:none}
+  .tt{flex:1;min-width:0}
+  .tt b{font-size:16px;display:block}
+  .tt small{color:var(--muted);font-size:12px}
+  .arw{color:var(--muted);font-size:20px}
+  .note{margin-top:18px;font-size:12px;color:var(--muted);background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;padding:12px 14px;line-height:1.6}
+</style>
+</head>
+<body>
+  <h1>📱 マイアプリ</h1>
+  <div class="sub">使いたいアプリを選んでください</div>
+
+  <a class="app" href="event.html">
+    <span class="ic">🧭</span>
+    <span class="tt"><b>イベント先読み分析</b><small>予定を事前に考える観点で洗い出す</small></span>
+    <span class="arw">›</span>
+  </a>
+  <a class="app" href="lifelog.html">
+    <span class="ic">📓</span>
+    <span class="tt"><b>生活ログ</b><small>したこと・所感・next actionを記録</small></span>
+    <span class="arw">›</span>
+  </a>
+  <a class="app" href="kyukyu.html">
+    <span class="ic">🚑</span>
+    <span class="tt"><b>救急観察支援メモ</b><small>観察の想起・申し送り・症例記録</small></span>
+    <span class="arw">›</span>
+  </a>
+
+  <div class="note">💡 各アプリを開いたら、Safariの「共有」→「ホーム画面に追加」で独立アプリとして常駐できます。</div>
+</body>
+</html>

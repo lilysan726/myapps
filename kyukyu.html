@@ -1,0 +1,945 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>救急観察支援メモ</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d7a8c">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="救急メモ">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- 外部フォント読込は削除（完全オフライン化）。iPhone標準のヒラギノにフォールバック -->
+<style>
+  :root{
+    --bg:#eef2f4; --surface:#ffffff; --surface-2:#f5f8f9; --line:#d3dcdf;
+    --ink:#132025; --ink-2:#4a5b62; --ink-3:#8697a0;
+    --accent:#0d7a8c; --accent-ink:#ffffff;
+    --red:#d1394b;   --red-bg:#fbe8ea;  --red-ink:#8f1626;
+    --amber:#c9791f; --amber-bg:#fbeedb;--amber-ink:#845010;
+    --green:#2f8f5b; --green-bg:#e4f2e9;--green-ink:#1c5f3a;
+    --shadow:0 1px 2px rgba(19,32,37,.06),0 4px 16px rgba(19,32,37,.06);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d1417; --surface:#161f23; --surface-2:#1c272b; --line:#2a3941;
+      --ink:#e7eef0; --ink-2:#a3b3b9; --ink-3:#5f7178;
+      --accent:#3aa9bd; --accent-ink:#04181c;
+      --red:#f0687a;   --red-bg:#3a1c22;  --red-ink:#ffb9c2;
+      --amber:#e4a24e; --amber-bg:#3a2c17;--amber-ink:#f4cf9a;
+      --green:#5cc084; --green-bg:#17301f;--green-ink:#a8e3c0;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1417; --surface:#161f23; --surface-2:#1c272b; --line:#2a3941;
+    --ink:#e7eef0; --ink-2:#a3b3b9; --ink-3:#5f7178;
+    --accent:#3aa9bd; --accent-ink:#04181c;
+    --red:#f0687a;   --red-bg:#3a1c22;  --red-ink:#ffb9c2;
+    --amber:#e4a24e; --amber-bg:#3a2c17;--amber-ink:#f4cf9a;
+    --green:#5cc084; --green-bg:#17301f;--green-ink:#a8e3c0;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.3);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN",system-ui,-apple-system,"Noto Sans JP",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.6;font-size:16px;
+    padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 48px);}
+  .wrap{max-width:640px;margin:0 auto;padding:14px}
+
+  header{padding:6px 2px 12px}
+  h1{font-size:1.32rem;letter-spacing:.02em;display:flex;align-items:center;gap:.4em}
+  .sub{color:var(--ink-2);font-size:.82rem;margin-top:4px}
+  .disc{display:flex;gap:9px;align-items:flex-start;background:var(--amber-bg);color:var(--amber-ink);
+    border:1px solid color-mix(in srgb,var(--amber) 40%,transparent);border-radius:11px;padding:10px 12px;
+    font-size:.78rem;line-height:1.5;margin-top:12px}
+  .disc b{color:var(--amber-ink)}
+
+  section{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:15px;margin-top:14px}
+  .sec-h{display:flex;align-items:center;gap:8px;font-size:.72rem;font-weight:700;letter-spacing:.12em;
+    color:var(--ink-2);text-transform:uppercase;margin-bottom:12px}
+  .sec-h::before{content:"";width:4px;height:15px;border-radius:2px;background:var(--accent)}
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:5px;flex:1;min-width:96px}
+  label{font-size:.74rem;color:var(--ink-2);font-weight:700}
+  input[type=number],input[type=text],input[type=time],select,textarea{
+    font-family:inherit;font-size:1.02rem;padding:11px 12px;border:1.5px solid var(--line);
+    border-radius:10px;background:var(--surface-2);color:var(--ink);width:100%}
+  input[type=number]{font-variant-numeric:tabular-nums}
+  textarea{resize:vertical;min-height:60px;line-height:1.5}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .hint{font-size:.7rem;color:var(--ink-3);margin-top:-2px}
+
+  .fieldblock{margin-top:16px}
+  .fieldblock:first-child{margin-top:0}
+  .fieldblock>label{display:block;margin-bottom:6px}
+  .qchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .qchip{font-family:inherit;font-size:.8rem;font-weight:700;padding:7px 12px;border-radius:20px;border:1.5px solid var(--line);
+    background:var(--surface-2);color:var(--ink-2);cursor:pointer}
+  .qchip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .qchip.warn[aria-pressed=true]{background:var(--red);border-color:var(--red);color:#fff}
+
+  .subblock{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+  .slabel{font-size:.74rem;color:var(--ink-2);font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .calcbadge{font-size:.8rem;font-weight:700;padding:5px 11px;border-radius:8px;background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+  .calcbadge[data-lvl=red]{background:var(--red-bg);color:var(--red-ink)}
+  .calcbadge[data-lvl=amber]{background:var(--amber-bg);color:var(--amber-ink)}
+  .calcbadge[data-lvl=green]{background:var(--green-bg);color:var(--green-ink)}
+  .evm{display:flex;gap:8px}
+  .evm label{display:flex;flex-direction:column;gap:4px;flex:1;font-size:.68rem;color:var(--ink-3);font-weight:700}
+  .evm select{font-size:.95rem;padding:9px 6px;border-width:2px}
+  .puprow{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+  .puprow .fld{min-width:70px;flex:0 0 auto}
+  .puprow .fld:last-child{flex:1;min-width:130px}
+  .puprow input,.puprow select{border-width:2px}
+
+  .seg{display:flex;gap:6px}
+  .seg button{flex:1;font-family:inherit;font-size:.95rem;font-weight:700;padding:11px 4px;border:1.5px solid var(--line);
+    background:var(--surface-2);color:var(--ink-2);border-radius:10px;cursor:pointer}
+  .seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+  .vitals{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .vital{display:flex;flex-direction:column;gap:5px}
+  .vital .cap{display:flex;justify-content:space-between;align-items:baseline}
+  .vital .unit{font-size:.66rem;color:var(--ink-3)}
+  .vital input,.vital select{border-width:2px;transition:border-color .15s,background .15s}
+  .vital[data-lvl=red] input,.vital[data-lvl=red] select{border-color:var(--red);background:var(--red-bg)}
+  .vital[data-lvl=amber] input,.vital[data-lvl=amber] select{border-color:var(--amber);background:var(--amber-bg)}
+  .vital[data-lvl=green] input,.vital[data-lvl=green] select{border-color:var(--green)}
+  .vnote{font-size:.66rem;min-height:.9em;font-weight:700}
+  .vital[data-lvl=red] .vnote{color:var(--red-ink)}
+  .vital[data-lvl=amber] .vnote{color:var(--amber-ink)}
+  .vital[data-lvl=green] .vnote{color:var(--green-ink)}
+
+  .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+  .chip{font-family:inherit;font-size:.92rem;font-weight:700;padding:14px 4px;cursor:pointer;border:1.5px solid var(--line);
+    background:var(--surface-2);color:var(--ink);border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:5px;line-height:1.2}
+  .chip .em{font-size:1.35rem}
+  .chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 28%,transparent)}
+  @media(max-width:420px){.chips{grid-template-columns:repeat(3,1fr)}}
+
+  #summary{display:none}
+  .triage{display:flex;align-items:center;gap:13px;padding:15px;border-radius:12px;font-weight:700}
+  .triage .badge{font-size:2rem;line-height:1;width:52px;height:52px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center}
+  .triage .lbl{font-size:1.12rem}
+  .triage .det{font-size:.78rem;font-weight:400;margin-top:2px;line-height:1.45}
+  .triage[data-lvl=red]{background:var(--red-bg);color:var(--red-ink)} .triage[data-lvl=red] .badge{background:var(--red);color:#fff}
+  .triage[data-lvl=amber]{background:var(--amber-bg);color:var(--amber-ink)} .triage[data-lvl=amber] .badge{background:var(--amber);color:#fff}
+  .triage[data-lvl=green]{background:var(--green-bg);color:var(--green-ink)} .triage[data-lvl=green] .badge{background:var(--green);color:#fff}
+  .triage[data-lvl=none]{background:var(--surface-2);color:var(--ink-2)} .triage[data-lvl=none] .badge{background:var(--line);color:var(--ink-2);font-size:1.3rem}
+
+  #result{display:none}
+  .rtitle{display:flex;align-items:center;gap:9px;font-size:1.15rem;font-weight:700;margin:2px 0}
+  .rtitle .em{font-size:1.3rem}
+  .block{margin-top:16px}
+  .block:first-of-type{margin-top:6px}
+  .block h3{font-size:.92rem;display:flex;align-items:center;gap:7px;margin-bottom:9px;padding-bottom:7px;border-bottom:1px dashed var(--line)}
+  .block h3 .tag{font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.04em}
+  .tag.killer{background:var(--red-bg);color:var(--red-ink)}
+  .tag.obs{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent)}
+  .tag.exam{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+
+  ul.k{list-style:none;display:flex;flex-wrap:wrap;gap:7px}
+  ul.k li{font-size:.86rem;font-weight:700;padding:6px 11px;border-radius:9px;background:var(--red-bg);color:var(--red-ink);
+    border:1px solid color-mix(in srgb,var(--red) 30%,transparent)}
+
+  .redflag{display:flex;gap:9px;align-items:flex-start;background:var(--red-bg);color:var(--red-ink);
+    border:1px solid color-mix(in srgb,var(--red) 35%,transparent);border-radius:10px;padding:11px 12px;
+    font-size:.85rem;line-height:1.5;font-weight:700;margin-top:6px}
+
+  /* 所見トグル */
+  .finding{display:grid;grid-template-columns:1fr auto;gap:7px 10px;align-items:center;padding:9px 2px;border-bottom:1px dashed var(--line)}
+  .finding .fl{font-size:.92rem}
+  .finding .fl b{color:var(--accent)}
+  .tgl{display:flex;gap:6px}
+  .tgl button{font-family:inherit;font-size:.8rem;font-weight:700;padding:7px 13px;border-radius:9px;border:1.5px solid var(--line);
+    background:var(--surface-2);color:var(--ink-3);cursor:pointer;min-width:50px}
+  .finding[data-status=normal] .tgl button[data-s=normal]{background:var(--green);border-color:var(--green);color:#fff}
+  .finding[data-status=abnormal] .tgl button[data-s=abnormal]{background:var(--red);border-color:var(--red);color:#fff}
+  .finding .memo{grid-column:1/-1;display:none;font-size:.9rem}
+  .finding[data-status=normal] .memo,.finding[data-status=abnormal] .memo{display:block}
+
+  /* 申し送り */
+  #handoff textarea{min-height:150px;font-size:.9rem;font-family:ui-monospace,"SF Mono",Menlo,monospace;white-space:pre}
+  .btnrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .btnrow button{flex:1;min-width:100px;font-family:inherit;font-size:.9rem;font-weight:700;padding:12px;border-radius:11px;cursor:pointer;border:1.5px solid transparent}
+  .btn-primary{background:var(--accent);color:var(--accent-ink)}
+  .btn-ghost{background:var(--surface);color:var(--ink-2);border-color:var(--line)}
+
+  .toolbar{display:flex;gap:8px;margin-top:14px}
+  .toolbar button{flex:1;font-family:inherit;font-size:.86rem;font-weight:700;padding:11px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer}
+  footer{color:var(--ink-3);font-size:.72rem;text-align:center;margin-top:22px;line-height:1.6}
+
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);
+    padding:11px 20px;border-radius:24px;font-size:.86rem;font-weight:700;opacity:0;pointer-events:none;transition:.25s;z-index:50;box-shadow:var(--shadow)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><span>🚑</span>救急観察支援メモ</h1>
+    <div class="sub">通報・主訴・バイタル・所見を記録し、見逃し厳禁疾患と観察項目を想起する</div>
+    <div class="disc"><span>⚠️</span>
+      <div><b>これは診断ツールではありません。</b>観察の抜け漏れ防止と鑑別の想起・記録を助ける個人用メモです。最終判断・処置・搬送は各プロトコルとメディカルコントロールに従ってください。バイタル基準は成人目安。</div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-h">基本情報</div>
+    <div class="row">
+      <div class="fld" style="flex:0 0 104px">
+        <label for="age">年齢</label>
+        <input id="age" type="number" inputmode="numeric" min="0" max="120" placeholder="—">
+      </div>
+      <div class="fld">
+        <label>性別</label>
+        <div class="seg" id="sex">
+          <button type="button" data-v="男" aria-pressed="false">男性</button>
+          <button type="button" data-v="女" aria-pressed="false">女性</button>
+        </div>
+      </div>
+    </div>
+    <div id="ageNote" class="vnote" style="margin-top:8px"></div>
+  </section>
+
+  <section>
+    <div class="sec-h">通報内容（覚知情報）</div>
+    <textarea id="report" placeholder="例）自宅で胸を押さえて苦しがっていると家族から通報。意識あり。"></textarea>
+  </section>
+
+  <section>
+    <div class="sec-h">既往・内服・アレルギー</div>
+    <div class="fieldblock">
+      <label for="pmh">既往歴</label>
+      <textarea id="pmh" style="min-height:52px" placeholder="例）高血圧・糖尿病・陳旧性心筋梗塞"></textarea>
+      <div class="qchips" data-target="pmh"></div>
+    </div>
+    <div class="fieldblock">
+      <label for="meds">内服薬</label>
+      <textarea id="meds" style="min-height:52px" placeholder="例）ワーファリン・アムロジピン"></textarea>
+      <div class="qchips" data-target="meds"></div>
+      <div class="hint" style="margin-top:6px">※ 抗凝固薬・抗血小板薬は出血リスクに直結（赤で表示）</div>
+    </div>
+    <div class="fieldblock">
+      <label for="allergy">アレルギー</label>
+      <textarea id="allergy" style="min-height:44px" placeholder="例）なし ／ 造影剤・ペニシリン"></textarea>
+      <div class="qchips" data-target="allergy"></div>
+    </div>
+    <div class="fieldblock">
+      <label for="notes">特記事項・かかりつけ</label>
+      <textarea id="notes" style="min-height:44px" placeholder="例）〇〇病院 循環器内科通院。ADL自立。DNARの意思あり等"></textarea>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h">バイタルサイン</div>
+    <div class="vitals">
+      <div class="vital" data-key="jcs">
+        <div class="cap"><label for="jcs">意識（JCS）</label></div>
+        <select id="jcs">
+          <option value="">—</option>
+          <option value="0">清明 (0)</option>
+          <option value="1">Ⅰ-1</option><option value="2">Ⅰ-2</option><option value="3">Ⅰ-3</option>
+          <option value="10">Ⅱ-10</option><option value="20">Ⅱ-20</option><option value="30">Ⅱ-30</option>
+          <option value="100">Ⅲ-100</option><option value="200">Ⅲ-200</option><option value="300">Ⅲ-300</option>
+        </select>
+        <div class="vnote"></div>
+      </div>
+      <div class="vital" data-key="rr">
+        <div class="cap"><label for="rr">呼吸数</label><span class="unit">回/分</span></div>
+        <input id="rr" type="number" inputmode="numeric" min="0" max="80" placeholder="—"><div class="vnote"></div>
+      </div>
+      <div class="vital" data-key="spo2">
+        <div class="cap"><label for="spo2">SpO₂</label><span class="unit">%</span></div>
+        <input id="spo2" type="number" inputmode="numeric" min="50" max="100" placeholder="—"><div class="vnote"></div>
+      </div>
+      <div class="vital" data-key="hr">
+        <div class="cap"><label for="hr">脈拍</label><span class="unit">回/分</span></div>
+        <input id="hr" type="number" inputmode="numeric" min="0" max="250" placeholder="—"><div class="vnote"></div>
+      </div>
+      <div class="vital" data-key="sbp">
+        <div class="cap"><label for="sbp">収縮期血圧</label><span class="unit">mmHg</span></div>
+        <input id="sbp" type="number" inputmode="numeric" min="0" max="300" placeholder="—"><div class="vnote"></div>
+      </div>
+      <div class="vital" data-key="dbp">
+        <div class="cap"><label for="dbp">拡張期血圧</label><span class="unit">mmHg</span></div>
+        <input id="dbp" type="number" inputmode="numeric" min="0" max="200" placeholder="—"><div class="vnote"></div>
+      </div>
+      <div class="vital" data-key="temp">
+        <div class="cap"><label for="temp">体温</label><span class="unit">℃</span></div>
+        <input id="temp" type="number" inputmode="decimal" step="0.1" min="28" max="43" placeholder="—"><div class="vnote"></div>
+      </div>
+      <div class="vital" data-key="bg">
+        <div class="cap"><label for="bg">血糖</label><span class="unit">mg/dL</span></div>
+        <input id="bg" type="number" inputmode="numeric" min="0" max="1000" placeholder="—"><div class="vnote"></div>
+      </div>
+    </div>
+
+    <div class="subblock">
+      <div class="slabel"><span>GCS（意識レベル）</span><span class="calcbadge" id="gcsBadge">合計 —</span></div>
+      <div class="evm">
+        <label>開眼 E
+          <select id="gcsE"><option value="">—</option><option value="4">4 自発</option><option value="3">3 呼名</option><option value="2">2 痛み</option><option value="1">1 なし</option></select>
+        </label>
+        <label>発語 V
+          <select id="gcsV"><option value="">—</option><option value="5">5 見当識</option><option value="4">4 混乱</option><option value="3">3 不適当</option><option value="2">2 発声のみ</option><option value="1">1 なし</option></select>
+        </label>
+        <label>運動 M
+          <select id="gcsM"><option value="">—</option><option value="6">6 命令に従う</option><option value="5">5 払いのける</option><option value="4">4 逃避</option><option value="3">3 異常屈曲</option><option value="2">2 伸展</option><option value="1">1 なし</option></select>
+        </label>
+      </div>
+    </div>
+
+    <div class="subblock">
+      <div class="slabel"><span>瞳孔</span><span class="calcbadge" id="pupBadge">—</span></div>
+      <div class="puprow">
+        <div class="fld"><label for="pupL">左 mm</label><input id="pupL" type="number" inputmode="decimal" step="0.5" min="1" max="9" placeholder="—"></div>
+        <div class="fld"><label for="pupR">右 mm</label><input id="pupR" type="number" inputmode="decimal" step="0.5" min="1" max="9" placeholder="—"></div>
+        <div class="fld"><label for="pupReact">対光反射</label>
+          <select id="pupReact"><option value="">—</option><option value="両側迅速">両側 迅速</option><option value="鈍麻">鈍麻</option><option value="左右差あり">左右差あり</option><option value="消失">消失</option></select>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h">12誘導心電図 所見</div>
+    <textarea id="ecg" style="min-height:52px" placeholder="例）Ⅱ・Ⅲ・aVFでST上昇。病院へ12誘導伝送済。"></textarea>
+    <div class="qchips" data-target="ecg"></div>
+  </section>
+
+  <section>
+    <div class="sec-h">主訴</div>
+    <div class="chips" id="chips"></div>
+    <div class="row" style="align-items:stretch">
+      <div class="fld" style="flex:1 1 100%">
+        <label for="chief">本人の訴え（本人の言葉で）</label>
+        <textarea id="chief" style="min-height:52px" placeholder="例）30分前から急に胸が締め付けられる。冷や汗も出る。"></textarea>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="fld" style="flex:0 0 150px">
+        <label for="onset">発症時刻</label>
+        <input id="onset" type="time">
+      </div>
+    </div>
+  </section>
+
+  <section id="summary">
+    <div class="sec-h">緊急度サマリー</div>
+    <div class="triage" data-lvl="none" id="triage">
+      <div class="badge">—</div>
+      <div><div class="lbl">主訴とバイタルを入力</div><div class="det"></div></div>
+    </div>
+  </section>
+
+  <div id="result"></div>
+
+  <section id="handoff">
+    <div class="sec-h">申し送り（記録の書き出し）</div>
+    <div class="btnrow">
+      <button type="button" class="btn-primary" id="genBtn">申し送りを作成</button>
+    </div>
+    <textarea id="handoffText" placeholder="「申し送りを作成」を押すと、入力内容がここに整形されます。編集も可能です。" style="margin-top:10px"></textarea>
+    <div class="btnrow">
+      <button type="button" class="btn-ghost" id="copyBtn">📋 コピー</button>
+      <button type="button" class="btn-ghost" id="shareBtn">📤 共有</button>
+    </div>
+    <div class="btnrow" style="margin-top:8px">
+      <button type="button" class="btn-primary" id="saveCaseBtn">💾 この症例を記録に保存</button>
+    </div>
+  </section>
+
+  <section id="records">
+    <div class="sec-h">📋 記録・テンプレ・データ</div>
+    <div class="btnrow">
+      <button type="button" class="btn-ghost" id="saveTmplBtn">⭐ 常用項目をテンプレ保存</button>
+    </div>
+    <div id="tmplBar" class="chips" style="margin-top:8px"></div>
+    <div class="hint" style="margin-top:12px">保存した症例（<span id="histCount">0</span>件）</div>
+    <div id="histList"></div>
+    <div class="btnrow" style="margin-top:12px">
+      <button type="button" class="btn-ghost" id="expJsonBtn">💾 JSON書き出し</button>
+      <button type="button" class="btn-ghost" id="impJsonBtn">📥 JSON読み込み</button>
+    </div>
+    <input type="file" id="impFile" accept="application/json,.json" style="display:none">
+    <div id="tmplManage" style="margin-top:10px"></div>
+  </section>
+
+  <div class="toolbar"><button type="button" id="resetBtn">すべてクリア</button></div>
+
+  <footer>
+    観察の想起・記録支援ツール（自分専用メモ）／ OPQRST・SAMPLE・AIUEOTIPS・qSOFA 準拠<br>
+    入力は端末内に自動保存。圏外でも動作。ブラウザの「ホーム画面に追加」で常駐できます。
+  </footer>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+const SYMPTOMS = {
+  chest:{em:"❤️",name:"胸痛",
+    killer:["急性冠症候群(心筋梗塞)","大動脈解離","肺塞栓症","緊張性気胸","特発性食道破裂"],
+    obs:[["突然発症"," か（発症時刻・何をしていたか）"],["部位と<b>放散</b>"," ：左肩・顎・背部・心窩部"],["性状"," ：締め付け／裂ける様／圧迫"],["持続時間"," と反復"],["増悪・寛解因子"," ：労作・体位・呼吸・食事"],["随伴症状"," ：冷汗・嘔気・呼吸困難・失神"]],
+    exam:["左右上肢の<b>血圧差</b>（大動脈解離）","頸静脈怒張・呼吸音左右差（気胸）","冷汗・皮膚湿潤・チアノーゼ","脈の左右差・欠損","12誘導心電図の準備"],
+    red:"冷汗を伴う突然の胸痛／背部へ移動する痛み／血圧左右差 → ACS・解離を最優先で疑う"},
+  dyspnea:{em:"🫁",name:"呼吸困難",
+    killer:["急性心不全・肺水腫","肺塞栓症","緊張性気胸","気管支喘息(重積)","アナフィラキシー","上気道閉塞・異物","重症肺炎"],
+    obs:[["発症様式"," ：突然／緩徐"],["起坐呼吸"," の有無（心不全）"],["喘鳴"," ：吸気性(上気道)／呼気性(喘息)"],["咳・痰・血痰",""],["発熱・胸痛"," の合併"],["アレルゲン曝露"," ・蜂刺され・食物・薬剤"]],
+    exam:["呼吸様式・努力呼吸・陥没呼吸","呼吸音：喘鳴・ラ音・<b>左右差</b>","頸静脈怒張・下腿浮腫（心不全）","皮疹・口唇腫脹（アナフィラキシー）","チアノーゼ・SpO₂ 推移"],
+    red:"SpO₂低下＋努力呼吸／会話困難／喘鳴＋皮疹 → 気道緊急・アナフィラキシーを疑う"},
+  headache:{em:"🧠",name:"頭痛",
+    killer:["くも膜下出血","脳出血","髄膜炎・脳炎","急性緑内障発作","一酸化炭素中毒","脳腫瘍","側頭動脈炎"],
+    obs:[["突然発症"," の<b>雷鳴頭痛</b>か"],["人生最悪の頭痛"," か・増悪傾向"],["発熱・項部硬直",""],["神経症状"," ：麻痺・言語・視覚・複視"],["嘔吐"," ・意識変容"],["同居者の同症状"," （CO中毒）・外傷歴"]],
+    exam:["意識（GCS/JCS）・瞳孔・対光反射","<b>項部硬直</b>・ジョルトサイン","四肢麻痺・構音障害・共同偏視","血圧（著明高値）","嘔吐・けいれんの有無"],
+    red:"突然発症で最悪の頭痛／発熱＋項部硬直／神経局所症状／50歳以降の新規頭痛 → 致死的頭痛"},
+  abd:{em:"🩹",name:"腹痛",
+    killer:["腹部大動脈瘤破裂","消化管穿孔","腸間膜虚血","絞扼性イレウス","急性膵炎","異所性妊娠破裂","下壁心筋梗塞"],
+    obs:[["部位と移動"," ：心窩部→右下腹部 等"],["性状"," ：持続／間欠／裂ける様"],["突然発症"," か・発症時刻"],["随伴"," ：嘔吐・下痢・下血・吐血"],["排便・排ガス"," 停止（イレウス）"],["<b>妊娠可能性</b>・月経"," ／既往手術・結石"]],
+    exam:["腹部：板状硬・反跳痛・拍動性腫瘤","バイタル（<b>ショック</b>徴候）・冷汗","腸蠕動音・膨満","皮膚色・貧血","下壁梗塞疑い時は心電図"],
+    red:"拍動性腫瘤＋ショック（AAA破裂）／板状硬（穿孔）／妊娠可能女性の下腹部痛＋ショック（異所性妊娠）"},
+  consci:{em:"😵",name:"意識障害",
+    killer:["脳卒中・くも膜下出血","低血糖／高血糖","薬物・アルコール中毒","低酸素・CO₂ナルコーシス","敗血症・感染","電解質異常・肝腎不全","低体温・高体温"],
+    obs:[["<b>血糖測定</b>"," （必須）"],["発症様式"," ：突然／緩徐・発症時刻"],["麻痺・共同偏視"," （脳卒中）"],["けいれん・失禁"," の有無"],["服薬・アルコール"," ・薬物"],["外傷痕・臭気"," （アセトン・アルコール）"]],
+    exam:["GCS/JCS・<b>瞳孔（左右差・縮瞳）</b>・対光反射","片麻痺・バレー徴候（脳卒中）","呼吸パターン・SpO₂","血糖・体温","AIUEOTIPS で系統的に鑑別"],
+    red:"血糖は必ず測定。瞳孔左右差／共同偏視／片麻痺 → 脳卒中疑い（発症時刻を確認）"},
+  syncope:{em:"💫",name:"めまい・失神",
+    killer:["心原性失神(不整脈・AS)","肺塞栓症","消化管出血・大動脈解離","くも膜下出血","脳幹・小脳卒中"],
+    obs:[["性状"," ：回転性／浮動性／眼前暗黒"],["<b>労作時・臥位</b>で発症"," か（心原性）"],["動悸・胸痛"," の合併"],["神経症状"," ：構音・複視・麻痺（中枢性）"],["前駆症状"," の有無"],["下血・黒色便"," ・突然の後頭部痛"]],
+    exam:["血圧：起立性変動・<b>左右差</b>","脈：不整・徐脈／頻脈","眼振（方向交代性＝中枢性）","四肢失調・麻痺","顔色・眼瞼結膜（貧血）"],
+    red:"労作時失神／動悸・胸痛を伴う／神経症状を伴うめまい／突然の頭痛を伴う → 心原性・中枢性を疑う"},
+  seizure:{em:"⚡",name:"けいれん",
+    killer:["てんかん重積","低血糖","脳卒中・くも膜下出血","髄膜炎・脳炎","電解質異常(低Na)","子癇(妊娠)","中毒・離脱"],
+    obs:[["持続時間・反復"," （<b>5分以上／反復＝重積</b>）"],["全般 or 部分"," 発作・発症時刻"],["発熱"," （小児：熱性／髄膜炎）"],["<b>妊娠</b>"," （子癇）・服薬・断酒"],["血糖"," 測定"],["発作後の意識回復"," の有無"]],
+    exam:["気道確保・SpO₂・<b>血糖</b>","瞳孔・体温","麻痺（Todd麻痺 vs 脳卒中）","舌咬傷・失禁・外傷","反復・持続のモニタ"],
+    red:"5分以上持続 or 反復＝てんかん重積（緊急）。初発けいれん・妊婦・血糖低値に注意"},
+  fever:{em:"🌡️",name:"発熱",
+    killer:["敗血症・敗血症性ショック","髄膜炎・脳炎","感染性心内膜炎","壊死性軟部組織感染","熱中症(高体温)","悪性症候群/セロトニン症候群"],
+    obs:[["経過"," ：発症からの日数"],["悪寒戦慄"," の有無"],["随伴"," ：頭痛・項部硬直・咳・排尿痛・下痢・皮疹"],["環境"," ：高温環境（熱中症）"],["免疫抑制・化療歴"," ・服薬（抗精神病薬）"],["渡航・接触歴",""]],
+    exam:["<b>qSOFA</b>：意識・呼吸数≥22・収縮期≤100","皮膚：発疹・<b>点状出血</b>・蜂窩織炎","項部硬直・意識変容","末梢冷感・CRT延長（ショック）","脱水徴候"],
+    red:"qSOFA 2項目以上で敗血症疑い。項部硬直＋意識障害／点状出血／高体温＋意識障害（熱中症・悪性症候群）"},
+};
+const CHIP_ORDER=["chest","dyspnea","headache","abd","consci","syncope","seizure","fever"];
+const SAMPLE=[
+  ["S 症状","主訴・随伴症状（OPQRST）"],["A アレルギー","薬剤・食物・その他"],
+  ["M 内服薬","<b>抗凝固薬</b>・降圧薬・血糖降下薬・向精神薬"],["P 既往歴","心・脳・呼吸器・糖尿・手術歴"],
+  ["L 最終経口摂取","時刻（誤嚥・手術に関わる）"],["E 発症の経緯","発症時刻・きっかけ・現病の流れ"],
+];
+const JCS_LABEL={"0":"清明(0)","1":"Ⅰ-1","2":"Ⅰ-2","3":"Ⅰ-3","10":"Ⅱ-10","20":"Ⅱ-20","30":"Ⅱ-30","100":"Ⅲ-100","200":"Ⅲ-200","300":"Ⅲ-300"};
+
+const state={age:"",sex:null,report:"",pmh:"",meds:"",allergy:"",notes:"",ecg:"",chief:"",onset:"",jcs:"",rr:"",spo2:"",hr:"",sbp:"",dbp:"",temp:"",bg:"",gcsE:"",gcsV:"",gcsM:"",pupL:"",pupR:"",pupReact:"",symptom:null,findings:{}};
+
+const QUICK={
+  pmh:["高血圧","糖尿病","脂質異常","心疾患","心房細動","脳卒中","喘息/COPD","腎不全(透析)","悪性腫瘍","認知症","手術歴","なし"],
+  meds:["抗凝固薬","抗血小板薬","降圧薬","血糖降下薬","インスリン","ステロイド","向精神薬","なし"],
+  allergy:["なし","薬剤","食物","造影剤"],
+  ecg:["洞調律","心房細動","ST上昇","ST低下","T波逆転","異常Q波","上室頻拍","心室頻拍","脚ブロック","ペーシング","12誘導伝送済"],
+};
+const WARN_TOKENS=new Set(["抗凝固薬","抗血小板薬","ST上昇","心室頻拍"]);
+
+/* ---- バイタル評価 ---- */
+function evalVital(key,raw){
+  if(raw==="" || raw==null) return {lvl:null,note:""};
+  const v=Number(raw); if(Number.isNaN(v)) return {lvl:null,note:""};
+  switch(key){
+    case "jcs": if(v===0)return{lvl:"green",note:"清明"}; if(v<10)return{lvl:"amber",note:"軽度意識障害"}; return{lvl:"red",note:"意識障害(2桁以上)"};
+    case "rr": if(v<10)return{lvl:"red",note:"徐呼吸"}; if(v<=11)return{lvl:"amber",note:"やや低下"}; if(v<=20)return{lvl:"green",note:"正常"}; if(v<=29)return{lvl:"amber",note:"頻呼吸(qSOFA≥22)"}; return{lvl:"red",note:"著明な頻呼吸"};
+    case "spo2": if(v>=96)return{lvl:"green",note:"正常"}; if(v>=93)return{lvl:"amber",note:"軽度低下"}; if(v>=90)return{lvl:"amber",note:"低下(要酸素)"}; return{lvl:"red",note:"著明低下"};
+    case "hr": if(v<40)return{lvl:"red",note:"著明な徐脈"}; if(v<50)return{lvl:"amber",note:"徐脈"}; if(v<=100)return{lvl:"green",note:"正常"}; if(v<=120)return{lvl:"amber",note:"頻脈"}; return{lvl:"red",note:"著明な頻脈"};
+    case "sbp": if(v<90)return{lvl:"red",note:"ショック域"}; if(v<100)return{lvl:"amber",note:"低め(qSOFA≤100)"}; if(v<180)return{lvl:"green",note:"正常〜許容"}; if(v<220)return{lvl:"amber",note:"高値"}; return{lvl:"red",note:"高血圧緊急域"};
+    case "dbp": if(v<40)return{lvl:"amber",note:"低め"}; if(v<90)return{lvl:"green",note:"正常"}; if(v<120)return{lvl:"amber",note:"高値"}; return{lvl:"red",note:"高血圧緊急域"};
+    case "temp": if(v<35)return{lvl:"red",note:"低体温"}; if(v<36)return{lvl:"amber",note:"やや低体温"}; if(v<37.5)return{lvl:"green",note:"正常"}; if(v<39)return{lvl:"amber",note:"発熱"}; if(v<40)return{lvl:"red",note:"高熱"}; return{lvl:"red",note:"高体温(熱中症域)"};
+    case "bg": if(v<50)return{lvl:"red",note:"重度低血糖"}; if(v<70)return{lvl:"amber",note:"低血糖"}; if(v<=180)return{lvl:"green",note:"正常〜許容"}; if(v<=349)return{lvl:"amber",note:"高血糖"}; return{lvl:"red",note:"著明高血糖"};
+  }
+  return {lvl:null,note:""};
+}
+
+/* ---- 派生指標（GCS合計・ショック指数・瞳孔） ---- */
+function gcsTotal(){ if(state.gcsE&&state.gcsV&&state.gcsM) return Number(state.gcsE)+Number(state.gcsV)+Number(state.gcsM); return null; }
+function gcsLevel(t){ if(t==null)return null; if(t<=8)return "red"; if(t<=13)return "amber"; return "green"; }
+function shockIndex(){ const h=Number(state.hr),s=Number(state.sbp); if(state.hr!==""&&state.sbp!==""&&s>0) return h/s; return null; }
+function siLevel(si){ if(si==null)return null; if(si>=1.0)return "red"; if(si>=0.7)return "amber"; return "green"; }
+function pupilDiff(){ if(state.pupL!==""&&state.pupR!=="") return Math.abs(Number(state.pupL)-Number(state.pupR)); return null; }
+function pupilAssess(){
+  const d=pupilDiff(); const L=state.pupL!==""?Number(state.pupL):null; const R=state.pupR!==""?Number(state.pupR):null;
+  let lvl=null, notes=[];
+  if(d!=null && d>=1){ lvl="red"; notes.push("左右差"+(Math.round(d*10)/10)+"mm"); }
+  [["左",L],["右",R]].forEach(([lab,val])=>{ if(val!=null){ if(val>=5){ if(lvl!=="red")lvl="amber"; notes.push(lab+"散大"); } else if(val<=2){ if(lvl!=="red")lvl="amber"; notes.push(lab+"縮瞳"); } } });
+  if(state.pupReact==="消失"||state.pupReact==="左右差あり"){ lvl="red"; notes.push("対光"+state.pupReact); }
+  else if(state.pupReact==="鈍麻"){ if(lvl!=="red")lvl="amber"; notes.push("対光鈍麻"); }
+  if(!notes.length && (L!=null||R!=null)) notes.push("異常なし");
+  return {lvl, text: notes.join("・")};
+}
+const LVL_RANK={red:3,amber:2,green:1};
+function labelOf(k){return {jcs:"意識",rr:"呼吸数",spo2:"SpO₂",hr:"脈拍",sbp:"収縮期",dbp:"拡張期",temp:"体温",bg:"血糖"}[k];}
+function stripTags(s){return String(s).replace(/<[^>]+>/g,"");}
+function plainLabel(it){return Array.isArray(it)?stripTags(it[0]+(it[1]||"")):stripTags(it);}
+
+/* ---- 描画 ---- */
+function renderChips(){
+  const c=document.getElementById("chips"); c.innerHTML="";
+  CHIP_ORDER.forEach(key=>{
+    const s=SYMPTOMS[key]; const b=document.createElement("button");
+    b.className="chip"; b.type="button";
+    b.setAttribute("aria-pressed", state.symptom===key?"true":"false");
+    b.innerHTML=`<span class="em">${s.em}</span>${s.name}`;
+    b.onclick=()=>{ state.symptom = state.symptom===key?null:key; save(); renderChips(); renderResult(); renderSummary(); };
+    c.appendChild(b);
+  });
+}
+function computeVitalLevels(){
+  const keys=["jcs","rr","spo2","hr","sbp","dbp","temp","bg"]; const res={}; let worst=0; let anyEntered=false; const flags=[];
+  keys.forEach(k=>{ const r=evalVital(k,state[k]); res[k]=r;
+    if(r.lvl){anyEntered=true; if(LVL_RANK[r.lvl]>worst)worst=LVL_RANK[r.lvl];}
+    if(r.lvl==="red")flags.push(labelOf(k)+"："+r.note);
+  });
+  return {res,worst,anyEntered,flags};
+}
+function renderVitals(){
+  const {res}=computeVitalLevels();
+  document.querySelectorAll(".vital").forEach(el=>{
+    const k=el.dataset.key; const r=res[k];
+    if(r.lvl){el.dataset.lvl=r.lvl; el.querySelector(".vnote").textContent=r.note;}
+    else{el.removeAttribute("data-lvl"); el.querySelector(".vnote").textContent="";}
+  });
+}
+function qsofaCount(){
+  let q=0;
+  if(state.jcs!=="" && Number(state.jcs)>0)q++;
+  if(state.rr!=="" && Number(state.rr)>=22)q++;
+  if(state.sbp!=="" && Number(state.sbp)<=100 && Number(state.sbp)>0)q++;
+  return q;
+}
+function renderSummary(){
+  const sum=document.getElementById("summary"); const t=document.getElementById("triage");
+  const cv=computeVitalLevels();
+  let worst=cv.worst, anyEntered=cv.anyEntered; const flags=cv.flags.slice();
+  const gt=gcsTotal(), gl=gcsLevel(gt);
+  const si=shockIndex(), sl=siLevel(si);
+  const pa=pupilAssess();
+  [gl,sl,pa.lvl].forEach(x=>{ if(x){ anyEntered=true; if(LVL_RANK[x]>worst)worst=LVL_RANK[x]; } });
+  if(gt!=null && gl==="red") flags.push("GCS "+gt+"(≤8)");
+  if(si!=null && sl==="red") flags.push("SI "+si.toFixed(1)+"(≥1.0)");
+  if(pa.lvl==="red") flags.push("瞳孔："+pa.text);
+  if(!anyEntered && !state.symptom){sum.style.display="none";return;}
+  sum.style.display="block";
+  let lvl="none",lbl="観察を継続";
+  if(worst===3){lvl="red";lbl="高緊急の可能性";}
+  else if(worst===2){lvl="amber";lbl="要注意";}
+  else if(worst===1){lvl="green";lbl="バイタルは安定範囲";}
+  const badge={red:"!!",amber:"!",green:"✓",none:"—"}[lvl];
+  const q=qsofaCount();
+  let det="";
+  if(flags.length) det="異常："+flags.join(" ／ ");
+  else if(lvl==="amber") det="注意値あり。推移を観察。";
+  else if(lvl==="green") det="入力範囲は安定。主訴の観察を継続。";
+  else det="バイタルを入力すると緊急度を色分けします。";
+  const extra=[];
+  if(si!=null && sl!=="red") extra.push("SI "+si.toFixed(1));
+  if(gt!=null && gl!=="red") extra.push("GCS "+gt);
+  if(extra.length) det+="　［"+extra.join(" / ")+"］";
+  if(q>=2) det+="　🔴qSOFA "+q+"項目 → 敗血症を疑う";
+  t.dataset.lvl=lvl; t.querySelector(".badge").textContent=badge;
+  t.querySelector(".lbl").textContent=lbl; t.querySelector(".det").textContent=det;
+}
+
+function renderDerived(){
+  const gt=gcsTotal(), gl=gcsLevel(gt); const gb=document.getElementById("gcsBadge");
+  if(gt!=null){ gb.textContent="合計 "+gt+"/15"; gb.dataset.lvl=gl; }
+  else { gb.textContent="合計 —"; gb.removeAttribute("data-lvl"); }
+  const pa=pupilAssess(); const pb=document.getElementById("pupBadge");
+  if(pa.text){ pb.textContent=pa.text; if(pa.lvl)pb.dataset.lvl=pa.lvl; else pb.removeAttribute("data-lvl"); }
+  else { pb.textContent="—"; pb.removeAttribute("data-lvl"); }
+}
+
+function makeFindingList(scope,items){
+  const wrap=document.createElement("div");
+  items.forEach((it,i)=>{
+    const key=scope+i; const f=state.findings[key]||{s:"",m:""};
+    const row=document.createElement("div"); row.className="finding"; row.dataset.status=f.s||"";
+    const lab=Array.isArray(it)?`<b>${it[0]}</b>${it[1]||""}`:it;
+    row.innerHTML=`<div class="fl">${lab}</div>
+      <div class="tgl">
+        <button type="button" data-s="normal">正常</button>
+        <button type="button" data-s="abnormal">異常</button>
+      </div>
+      <input class="memo" type="text" placeholder="所見の詳細・メモ">`;
+    const memo=row.querySelector(".memo"); memo.value=f.m||"";
+    row.querySelectorAll(".tgl button").forEach(btn=>{
+      btn.onclick=()=>{
+        const cur=(state.findings[key]&&state.findings[key].s)||"";
+        const ns=cur===btn.dataset.s?"":btn.dataset.s;
+        state.findings[key]={s:ns,m:(state.findings[key]&&state.findings[key].m)||""};
+        row.dataset.status=ns; save();
+      };
+    });
+    memo.addEventListener("input",()=>{
+      state.findings[key]={s:(state.findings[key]&&state.findings[key].s)||"",m:memo.value}; save();
+    });
+    wrap.appendChild(row);
+  });
+  return wrap;
+}
+function scopeObs(sym){return "O_"+sym+"_";}
+function scopeExam(sym){return "E_"+sym+"_";}
+const SCOPE_SAMPLE="S_";
+
+function renderResult(){
+  const r=document.getElementById("result");
+  if(!state.symptom){r.style.display="none"; r.innerHTML=""; return;}
+  const s=SYMPTOMS[state.symptom]; r.style.display="block";
+  const sec=document.createElement("section");
+  sec.innerHTML=`<div class="rtitle"><span class="em">${s.em}</span>${s.name}</div>`;
+
+  const b1=document.createElement("div"); b1.className="block";
+  b1.innerHTML=`<h3><span class="tag killer">見逃し厳禁</span>致死的疾患の想起</h3>`;
+  const kul=document.createElement("ul"); kul.className="k";
+  s.killer.forEach(k=>{const li=document.createElement("li");li.textContent=k;kul.appendChild(li);});
+  b1.appendChild(kul); sec.appendChild(b1);
+
+  const rf=document.createElement("div"); rf.className="redflag";
+  rf.innerHTML=`<span>🚨</span><span>${s.red}</span>`; sec.appendChild(rf);
+
+  const b2=document.createElement("div"); b2.className="block";
+  b2.innerHTML=`<h3><span class="tag obs">問診</span>追加で確認（OPQRST）</h3>`;
+  b2.appendChild(makeFindingList(scopeObs(state.symptom),s.obs)); sec.appendChild(b2);
+
+  const b3=document.createElement("div"); b3.className="block";
+  b3.innerHTML=`<h3><span class="tag exam">身体所見</span>とるべき所見</h3>`;
+  b3.appendChild(makeFindingList(scopeExam(state.symptom),s.exam)); sec.appendChild(b3);
+
+  const b4=document.createElement("div"); b4.className="block";
+  b4.innerHTML=`<h3><span class="tag exam">聴取</span>SAMPLE 病歴</h3>`;
+  b4.appendChild(makeFindingList(SCOPE_SAMPLE,SAMPLE)); sec.appendChild(b4);
+
+  r.innerHTML=""; r.appendChild(sec);
+}
+
+/* ---- 申し送りテキスト ---- */
+function findingLines(scope,items){
+  const out=[];
+  items.forEach((it,i)=>{
+    const f=state.findings[scope+i]; if(!f)return;
+    if(!f.s && !f.m)return;
+    const mark=f.s==="normal"?"正常":f.s==="abnormal"?"異常":"—";
+    let line="  ・"+plainLabel(it)+"："+mark;
+    if(f.m)line+="（"+f.m+"）";
+    out.push(line);
+  });
+  return out;
+}
+function buildReportText(){
+  const now=new Date();
+  const pad=n=>String(n).padStart(2,"0");
+  const ts=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const L=[]; L.push("【救急観察メモ】 "+ts);
+  const pt=[]; if(state.age!=="")pt.push(state.age+"歳"); if(state.sex)pt.push(state.sex+"性");
+  L.push("■患者："+(pt.length?pt.join(" "):"—"));
+  if(state.report.trim())L.push("■通報内容："+state.report.trim());
+  if(state.pmh.trim())L.push("■既往歴："+state.pmh.trim());
+  if(state.meds.trim())L.push("■内服薬："+state.meds.trim());
+  if(state.allergy.trim())L.push("■アレルギー："+state.allergy.trim());
+  if(state.notes.trim())L.push("■特記："+state.notes.trim());
+  if(state.symptom||state.chief.trim()||state.onset){
+    const parts=[];
+    if(state.symptom)parts.push(SYMPTOMS[state.symptom].name);
+    if(state.onset)parts.push("発症"+state.onset);
+    L.push("■主訴："+(parts.join(" / ")||"—"));
+    if(state.chief.trim())L.push("  本人の訴え：「"+state.chief.trim()+"」");
+  }
+  const vk=[["jcs","意識",v=>JCS_LABEL[v]||v],["rr","呼吸",v=>v+"回"],["spo2","SpO₂",v=>v+"%"],["hr","脈拍",v=>v+"回"]];
+  const vparts=vk.filter(([k])=>state[k]!=="").map(([k,lab,fmt])=>lab+" "+fmt(state[k]));
+  if(state.sbp!=="" || state.dbp!==""){
+    const s=state.sbp!==""?state.sbp:"-"; const d=state.dbp!==""?state.dbp:"-";
+    vparts.push("血圧 "+s+"/"+d+"mmHg");
+  }
+  if(state.temp!=="")vparts.push("体温 "+state.temp+"℃");
+  if(state.bg!=="")vparts.push("血糖 "+state.bg+"mg/dL");
+  const gt=gcsTotal(), gl=gcsLevel(gt);
+  const si=shockIndex(), sl=siLevel(si);
+  const pa=pupilAssess();
+  if(vparts.length){
+    L.push("■バイタル："+vparts.join(" / "));
+    const cv=computeVitalLevels(); let worst=cv.worst; const flags=cv.flags.slice();
+    [gl,sl,pa.lvl].forEach(x=>{ if(x && LVL_RANK[x]>worst)worst=LVL_RANK[x]; });
+    if(gt!=null && gl==="red") flags.push("GCS "+gt);
+    if(si!=null && sl==="red") flags.push("SI "+si.toFixed(1));
+    if(pa.lvl==="red") flags.push("瞳孔"+pa.text);
+    const q=qsofaCount();
+    const tri=worst===3?"高緊急の可能性":worst===2?"要注意":worst===1?"安定範囲":"—";
+    let tl="  → 緊急度："+tri; if(flags.length)tl+="（"+flags.join("／")+"）"; if(q>=2)tl+=" ※qSOFA"+q+"項目";
+    L.push(tl);
+  }
+  if(gt!=null)L.push("■GCS：E"+state.gcsE+" V"+state.gcsV+" M"+state.gcsM+" = "+gt+"/15");
+  if(si!=null)L.push("■ショック指数(SI)："+si.toFixed(1)+(sl==="red"?"（≥1.0 出血/循環不全を疑う）":sl==="amber"?"（やや高値）":""));
+  if(state.pupL!==""||state.pupR!==""||state.pupReact){
+    let p="■瞳孔：";
+    if(state.pupL!=="")p+="左"+state.pupL+"mm ";
+    if(state.pupR!=="")p+="右"+state.pupR+"mm ";
+    const pd=pupilDiff(); if(pd!=null&&pd>0)p+="(左右差"+(Math.round(pd*10)/10)+"mm) ";
+    if(state.pupReact)p+="／対光"+state.pupReact;
+    L.push(p.trim());
+  }
+  if(state.ecg.trim())L.push("■心電図(12誘導)："+state.ecg.trim());
+  if(state.symptom){
+    const s=SYMPTOMS[state.symptom];
+    const ol=findingLines(scopeObs(state.symptom),s.obs);
+    if(ol.length){L.push("■観察(OPQRST)：");L.push(...ol);}
+    const el=findingLines(scopeExam(state.symptom),s.exam);
+    if(el.length){L.push("■身体所見：");L.push(...el);}
+    const sl=findingLines(SCOPE_SAMPLE,SAMPLE);
+    if(sl.length){L.push("■SAMPLE：");L.push(...sl);}
+  }
+  L.push("―――");
+  L.push("※本メモは観察支援用であり診断ではありません。");
+  return L.join("\n");
+}
+
+/* ---- 入力バインド ---- */
+function bindText(id){
+  const el=document.getElementById(id); el.value=state[id]??"";
+  el.addEventListener("input",()=>{state[id]=el.value;save();});
+}
+function bindVital(id){
+  const el=document.getElementById(id); el.value=state[id]??"";
+  el.addEventListener("input",()=>{state[id]=el.value;save();renderVitals();renderSummary();});
+}
+["jcs","rr","spo2","hr","sbp","dbp","temp","bg"].forEach(bindVital);
+["report","chief","onset","pmh","meds","allergy","notes","ecg"].forEach(bindText);
+
+["gcsE","gcsV","gcsM","pupL","pupR","pupReact"].forEach(id=>{
+  const el=document.getElementById(id); if(!el)return;
+  el.value=state[id]??"";
+  const h=()=>{ state[id]=el.value; save(); renderDerived(); renderSummary(); };
+  el.addEventListener("input",h); el.addEventListener("change",h);
+});
+
+/* ---- クイックチップ（既往・内服・アレルギー） ---- */
+function updateChipStates(target){
+  const cont=document.querySelector('.qchips[data-target="'+target+'"]'); if(!cont)return;
+  const val=state[target]||"";
+  cont.querySelectorAll(".qchip").forEach(chip=>{
+    chip.setAttribute("aria-pressed", val.includes(chip.dataset.token)?"true":"false");
+  });
+}
+function toggleToken(target,token){
+  let parts=(state[target]||"").split("・").map(s=>s.trim()).filter(Boolean);
+  if(parts.includes(token)) parts=parts.filter(p=>p!==token);
+  else parts.push(token);
+  state[target]=parts.join("・");
+  const el=document.getElementById(target); if(el)el.value=state[target];
+  save(); updateChipStates(target);
+}
+function renderQuick(){
+  Object.keys(QUICK).forEach(target=>{
+    const cont=document.querySelector('.qchips[data-target="'+target+'"]'); if(!cont)return;
+    cont.innerHTML="";
+    QUICK[target].forEach(token=>{
+      const b=document.createElement("button"); b.type="button"; b.className="qchip"; b.dataset.token=token;
+      if(WARN_TOKENS.has(token))b.classList.add("warn");
+      b.textContent="＋"+token; b.setAttribute("aria-pressed","false");
+      b.onclick=()=>toggleToken(target,token);
+      cont.appendChild(b);
+    });
+  });
+}
+["pmh","meds","allergy","ecg"].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener("input",()=>updateChipStates(id));
+});
+
+const ageEl=document.getElementById("age");
+function ageNote(){
+  const note=document.getElementById("ageNote");
+  if(state.age===""){note.textContent="";return;}
+  const n=Number(state.age);
+  if(n<15){note.style.color="var(--amber-ink)";note.textContent="※ 小児：バイタル基準・鑑別が成人と異なります。";}
+  else if(n>=65){note.style.color="var(--ink-2)";note.textContent="※ 高齢者：症状が非典型的になりやすい（無痛性心筋梗塞など）。";}
+  else note.textContent="";
+}
+ageEl.value=state.age??"";
+ageEl.addEventListener("input",()=>{state.age=ageEl.value;save();ageNote();});
+
+document.querySelectorAll("#sex button").forEach(b=>{
+  b.addEventListener("click",()=>{
+    state.sex=state.sex===b.dataset.v?null:b.dataset.v;
+    document.querySelectorAll("#sex button").forEach(x=>x.setAttribute("aria-pressed",state.sex===x.dataset.v?"true":"false"));
+    save();
+  });
+});
+
+/* ---- 申し送り操作 ---- */
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1800);}
+document.getElementById("genBtn").addEventListener("click",()=>{
+  document.getElementById("handoffText").value=buildReportText(); toast("申し送りを作成しました");
+});
+document.getElementById("copyBtn").addEventListener("click",async()=>{
+  const ta=document.getElementById("handoffText");
+  if(!ta.value.trim())ta.value=buildReportText();
+  try{ await navigator.clipboard.writeText(ta.value); toast("コピーしました"); }
+  catch(e){ ta.select(); document.execCommand("copy"); toast("コピーしました"); }
+});
+document.getElementById("shareBtn").addEventListener("click",async()=>{
+  const ta=document.getElementById("handoffText");
+  if(!ta.value.trim())ta.value=buildReportText();
+  if(navigator.share){ try{ await navigator.share({title:"救急観察メモ",text:ta.value}); }catch(e){} }
+  else { try{ await navigator.clipboard.writeText(ta.value); toast("共有非対応のためコピーしました"); }catch(e){ toast("この端末では共有できません"); } }
+});
+
+document.getElementById("resetBtn").addEventListener("click",()=>{
+  if(!confirm("入力内容をすべてクリアしますか？"))return;
+  localStorage.removeItem("kky_state"); location.reload();
+});
+
+/* ---- 永続化 ---- */
+function save(){try{localStorage.setItem("kky_state",JSON.stringify(state));}catch(e){}}
+function load(){try{const raw=localStorage.getItem("kky_state");if(raw)Object.assign(state,JSON.parse(raw));}catch(e){}}
+
+/* ---- 初期化 ---- */
+load();
+["jcs","rr","spo2","hr","sbp","dbp","temp","bg","gcsE","gcsV","gcsM","pupL","pupR","pupReact","report","chief","onset","pmh","meds","allergy","notes","ecg"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=state[id]??"";});
+ageEl.value=state.age??"";
+if(state.sex)document.querySelectorAll("#sex button").forEach(x=>x.setAttribute("aria-pressed",state.sex===x.dataset.v?"true":"false"));
+ageNote();
+renderChips(); renderVitals(); renderDerived(); renderSummary(); renderResult();
+renderQuick(); ["pmh","meds","allergy","ecg"].forEach(updateChipStates);
+
+/* ==== 記録履歴・マイテンプレ・データ書出/読込（既存stateとは別キーで保存） ==== */
+const HKEY="kky_history", TKEY="kky_tmpl";
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+let history=[], tmpls=[];
+try{ history=JSON.parse(localStorage.getItem(HKEY))||[]; }catch(e){ history=[]; }
+try{ tmpls=JSON.parse(localStorage.getItem(TKEY))||[]; }catch(e){ tmpls=[]; }
+const saveH=()=>{try{localStorage.setItem(HKEY,JSON.stringify(history));}catch(e){}};
+const saveT=()=>{try{localStorage.setItem(TKEY,JSON.stringify(tmpls));}catch(e){}};
+
+function caseIsEmpty(){
+  const keys=["age","sex","report","pmh","meds","allergy","notes","ecg","chief","onset","jcs","rr","spo2","hr","sbp","dbp","temp","bg","gcsE","gcsV","gcsM","pupL","pupR","pupReact","symptom"];
+  const anyField=keys.some(k=>state[k]!=="" && state[k]!=null);
+  const anyFinding=Object.values(state.findings||{}).some(f=>f&&(f.s||f.m));
+  return !anyField && !anyFinding;
+}
+function fmtTs(ts){ const d=new Date(ts); const p=n=>String(n).padStart(2,"0");
+  const w=["日","月","火","水","木","金","土"][d.getDay()];
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}(${w}) ${p(d.getHours())}:${p(d.getMinutes())}`; }
+
+/* 症例を履歴に保存 */
+document.getElementById("saveCaseBtn").addEventListener("click",()=>{
+  if(caseIsEmpty()){ toast("入力がありません"); return; }
+  const snap=JSON.parse(JSON.stringify(state));
+  const title=SYMPTOMS[state.symptom]?.name || (state.chief||"").slice(0,12) || "症例";
+  const who=[state.age!==""?state.age+"歳":"", state.sex?state.sex+"性":""].filter(Boolean).join(" ");
+  history.unshift({ id:uid(), ts:Date.now(), title, who, state:snap, summary:buildReportText() });
+  saveH(); renderHistory(); toast("記録に保存しました ✓");
+});
+
+function renderHistory(){
+  const box=document.getElementById("histList");
+  document.getElementById("histCount").textContent=history.length;
+  box.innerHTML="";
+  if(!history.length){ box.innerHTML=`<div class="hint" style="padding:8px 0">まだ保存した症例はありません。</div>`; return; }
+  history.forEach(c=>{
+    const card=document.createElement("div");
+    card.style.cssText="border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px";
+    const meta=document.createElement("div"); meta.className="hint"; meta.textContent=fmtTs(c.ts);
+    const ttl=document.createElement("div"); ttl.style.cssText="font-weight:600;margin:2px 0";
+    ttl.textContent=c.title+(c.who?"　"+c.who:"");
+    const row=document.createElement("div"); row.className="btnrow"; row.style.marginTop="6px";
+    const bShow=document.createElement("button"); bShow.type="button"; bShow.className="btn-ghost"; bShow.textContent="表示";
+    bShow.onclick=()=>{ document.getElementById("handoffText").value=c.summary;
+      document.getElementById("handoff").scrollIntoView({behavior:"smooth"}); toast("申し送り欄に表示しました"); };
+    const bRestore=document.createElement("button"); bRestore.type="button"; bRestore.className="btn-ghost"; bRestore.textContent="呼び出し";
+    bRestore.onclick=()=>{
+      if(!confirm("現在の入力を、この保存症例で置き換えます。よろしいですか？\n（現在の入力は失われます。必要なら先に保存してください）"))return;
+      try{ localStorage.setItem("kky_state", JSON.stringify(c.state)); }catch(e){}
+      location.reload();
+    };
+    const bDel=document.createElement("button"); bDel.type="button"; bDel.className="btn-ghost"; bDel.textContent="削除";
+    bDel.style.color="var(--red-ink,#c0392b)";
+    bDel.onclick=()=>{ if(confirm("この記録を削除しますか？")){ history=history.filter(x=>x.id!==c.id); saveH(); renderHistory(); toast("削除しました"); } };
+    row.appendChild(bShow); row.appendChild(bRestore); row.appendChild(bDel);
+    card.appendChild(meta); card.appendChild(ttl); card.appendChild(row);
+    box.appendChild(card);
+  });
+}
+
+/* マイテンプレ（常用の既往/内服/アレルギー/心電図/特記を保存） */
+const TMPL_FIELDS=["pmh","meds","allergy","ecg","notes"];
+document.getElementById("saveTmplBtn").addEventListener("click",()=>{
+  if(TMPL_FIELDS.every(k=>!(state[k]||"").trim())){ toast("既往・内服などを入力してから保存してください"); return; }
+  const def=(state.pmh||state.meds||"").slice(0,12);
+  const name=prompt("テンプレ名を入力（例：高齢・抗凝固薬あり）：", def);
+  if(!name)return;
+  const t={id:uid(), name:name.trim()};
+  TMPL_FIELDS.forEach(k=>t[k]=state[k]||"");
+  tmpls.push(t); saveT(); renderTmpl(); toast("⭐ テンプレに保存しました");
+});
+function applyTmpl(id){
+  const t=tmpls.find(x=>x.id===id); if(!t)return;
+  TMPL_FIELDS.forEach(k=>{ if(t[k]!==undefined){ state[k]=t[k]; const el=document.getElementById(k); if(el)el.value=state[k]; } });
+  save(); ["pmh","meds","allergy","ecg"].forEach(updateChipStates); toast("テンプレを反映しました");
+}
+function renderTmpl(){
+  const bar=document.getElementById("tmplBar"); bar.innerHTML="";
+  tmpls.forEach(t=>{
+    const b=document.createElement("button"); b.type="button"; b.className="chip"; b.style.cursor="pointer";
+    b.innerHTML=`<span class="em">⭐</span>${t.name}`;
+    b.onclick=()=>applyTmpl(t.id);
+    bar.appendChild(b);
+  });
+  const mng=document.getElementById("tmplManage"); mng.innerHTML="";
+  if(tmpls.length){
+    const h=document.createElement("div"); h.className="hint"; h.textContent="テンプレの削除："; mng.appendChild(h);
+    tmpls.forEach(t=>{
+      const row=document.createElement("div"); row.style.cssText="display:flex;align-items:center;gap:8px;padding:4px 0";
+      const nm=document.createElement("span"); nm.style.flex="1"; nm.textContent="⭐ "+t.name;
+      const del=document.createElement("button"); del.type="button"; del.className="btn-ghost"; del.textContent="削除";
+      del.onclick=()=>{ if(confirm(`テンプレ「${t.name}」を削除しますか？`)){ tmpls=tmpls.filter(x=>x.id!==t.id); saveT(); renderTmpl(); toast("削除しました"); } };
+      row.appendChild(nm); row.appendChild(del); mng.appendChild(row);
+    });
+  }
+}
+
+/* JSON書き出し / 読み込み（履歴＋テンプレのバックアップ・移行） */
+function download(name,text,type){
+  const blob=new Blob([text],{type}); const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1200);
+}
+document.getElementById("expJsonBtn").addEventListener("click",()=>{
+  const stamp=new Date().toISOString().slice(0,10);
+  download(`救急記録_${stamp}.json`, JSON.stringify({app:"kky",v:1,history,tmpls},null,2), "application/json");
+  toast("JSONを書き出しました");
+});
+document.getElementById("impJsonBtn").addEventListener("click",()=>document.getElementById("impFile").click());
+document.getElementById("impFile").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      const inH=Array.isArray(d)?d:(d.history||[]);
+      const inT=Array.isArray(d)?[]:(d.tmpls||[]);
+      const hm={}; [...history,...inH].forEach(x=>{ if(x&&x.id)hm[x.id]=x; }); history=Object.values(hm).sort((a,b)=>b.ts-a.ts);
+      const tm={}; [...tmpls,...inT].forEach(x=>{ if(x&&x.id)tm[x.id]=x; }); tmpls=Object.values(tm);
+      saveH(); saveT(); renderHistory(); renderTmpl();
+      toast(`読み込み完了（症例${history.length}／テンプレ${tmpls.length}）`);
+    }catch(err){ toast("読み込めませんでした"); }
+    e.target.value="";
+  };
+  r.readAsText(f);
+});
+
+renderHistory(); renderTmpl();
+
+/* ---- Service Worker 登録（HTTPS/localhost でのみ有効。圏外オフライン動作用） ---- */
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+</script>

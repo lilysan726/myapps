@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>イベント先読み分析</title>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171b21; --panel2:#1e242c; --line:#2a323c;
+    --text:#e8edf2; --muted:#9aa7b4; --accent:#4ea1ff; --accent2:#7c5cff;
+    --ok:#3ecf8e; --warn:#ffb454; --danger:#ff6b6b; --chip:#232b34;
+    --radius:16px; --shadow:0 4px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f4f6f9; --panel:#ffffff; --panel2:#f0f3f7; --line:#e2e8f0;
+      --text:#1a2230; --muted:#5a6b7d; --chip:#eef2f7; --shadow:0 4px 20px rgba(20,40,80,.08);
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.6;
+    padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 90px);
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    position:sticky; top:0; z-index:20; backdrop-filter:blur(12px);
+    background:color-mix(in srgb, var(--bg) 82%, transparent);
+    border-bottom:1px solid var(--line); padding:14px 18px;
+    padding-top:calc(env(safe-area-inset-top) + 12px);
+    display:flex; align-items:flex-start; gap:10px;
+  }
+  header .htxt{flex:1;min-width:0}
+  header h1{font-size:18px;margin:0;display:flex;align-items:center;gap:8px}
+  header .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .menubtn{flex:none;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    width:42px;height:42px;font-size:19px;color:var(--text);cursor:pointer;display:grid;place-items:center}
+  .menubtn:active{background:var(--chip)}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 16px 0}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); margin-bottom:14px; overflow:hidden;
+  }
+  .evhead{padding:16px 16px 12px; cursor:pointer; user-select:none; display:flex; gap:12px; align-items:flex-start}
+  .evhead:active{background:var(--panel2)}
+  .evicon{font-size:26px;line-height:1;flex:none;margin-top:2px}
+  .evtitle{flex:1;min-width:0}
+  .evtitle h2{margin:0;font-size:17px;font-weight:650}
+  .evmeta{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;align-items:center}
+  .chip{font-size:11px;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--muted);white-space:nowrap}
+  .chip.type{color:var(--accent)}
+  .countdown{font-size:12px;font-weight:650;padding:3px 10px;border-radius:999px}
+  .cd-soon{background:rgba(255,107,107,.15);color:var(--danger)}
+  .cd-near{background:rgba(255,180,84,.15);color:var(--warn)}
+  .cd-far{background:rgba(62,207,142,.15);color:var(--ok)}
+  .cd-past{background:var(--chip);color:var(--muted)}
+  .prog{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .bar{flex:1;height:6px;border-radius:99px;background:var(--chip);overflow:hidden}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .3s}
+  .progtxt{font-size:11px;color:var(--muted);white-space:nowrap}
+  .chev{flex:none;color:var(--muted);transition:transform .25s;margin-top:2px}
+  .card.open .chev{transform:rotate(90deg)}
+  .body{display:none;padding:0 16px 8px;border-top:1px solid var(--line)}
+  .card.open .body{display:block}
+  .notebox{padding:14px 0 12px;border-bottom:1px solid var(--line)}
+  .notebox label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:600}
+  .notebox textarea{width:100%;min-height:88px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:12px;padding:12px 13px;color:var(--text);font-size:14.5px;font-family:inherit;
+    line-height:1.6;resize:vertical}
+  .notebox textarea:focus{outline:none;border-color:var(--accent)}
+  .aspect{padding:12px 0;border-bottom:1px solid var(--line)}
+  .aspect:last-child{border-bottom:none}
+  .aspect h3{margin:0 0 8px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:7px;font-weight:600}
+  .aspect h3 .a-emoji{font-size:15px}
+  .item{display:flex;gap:10px;align-items:flex-start;padding:7px 6px;border-radius:10px;transition:background .15s}
+  .item:active{background:var(--panel2)}
+  .item .cb{flex:none;width:22px;height:22px;border-radius:7px;border:2px solid var(--line);
+    display:grid;place-items:center;cursor:pointer;margin-top:1px;transition:.15s;font-size:13px;color:#fff}
+  .item .cb.on{background:var(--ok);border-color:var(--ok)}
+  .item .tx{flex:1;font-size:14.5px;word-break:break-word}
+  .item.done .tx{color:var(--muted);text-decoration:line-through}
+  .item .del{flex:none;opacity:.35;font-size:16px;padding:0 4px;cursor:pointer;background:none;border:none;color:var(--text)}
+  .item .del:active{opacity:1;color:var(--danger)}
+  .additem{display:flex;gap:8px;margin-top:4px;padding:4px 6px}
+  .additem input{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:8px 11px;color:var(--text);font-size:14px;font-family:inherit}
+  .additem input:focus{outline:none;border-color:var(--accent)}
+  .additem button{flex:none;background:var(--chip);border:none;border-radius:10px;color:var(--accent);
+    font-size:20px;width:38px;cursor:pointer;font-family:inherit}
+  .additem button:active{background:var(--accent);color:#fff}
+  .evactions{display:flex;gap:8px;padding:12px 0 4px;flex-wrap:wrap}
+  .evactions button{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--muted);
+    font-size:12.5px;padding:8px 12px;cursor:pointer;font-family:inherit}
+  .evactions button:active{background:var(--chip)}
+  .evactions .star:active{color:var(--warn);border-color:var(--warn)}
+  .evactions .danger:active{color:var(--danger);border-color:var(--danger)}
+  .fab{
+    position:fixed; right:18px; bottom:calc(env(safe-area-inset-bottom) + 22px); z-index:30;
+    width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:32px;
+    box-shadow:0 6px 22px rgba(78,161,255,.45);display:grid;place-items:center;
+  }
+  .fab:active{transform:scale(.94)}
+  .empty{text-align:center;color:var(--muted);padding:60px 20px}
+  .empty .big{font-size:44px;margin-bottom:10px}
+  /* modal */
+  .modal{position:fixed;inset:0;z-index:40;display:none;align-items:flex-end;justify-content:center}
+  .modal.on{display:flex}
+  .modal .bd{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(2px)}
+  .sheet{position:relative;width:100%;max-width:720px;background:var(--panel);border-radius:20px 20px 0 0;
+    padding:20px 18px calc(env(safe-area-inset-bottom) + 24px);box-shadow:var(--shadow);
+    max-height:90vh;overflow:auto;animation:up .25s ease}
+  @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .sheet h2{margin:0 0 4px;font-size:18px}
+  .sheet .hint{font-size:12px;color:var(--muted);margin-bottom:16px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  .field input[type=text],.field input[type=datetime-local]{width:100%;background:var(--panel2);
+    border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--text);font-size:16px;font-family:inherit}
+  .field input:focus{outline:none;border-color:var(--accent)}
+  .seg{display:flex;flex-wrap:wrap;gap:8px}
+  .seg button{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:9px 12px;
+    color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px}
+  .seg button.sel{border-color:var(--accent);background:rgba(78,161,255,.12);color:var(--accent)}
+  .sheet .go{width:100%;margin-top:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:650;padding:14px;cursor:pointer;font-family:inherit}
+  .sheet .go:active{opacity:.85}
+  .tmplnote{font-size:11.5px;color:var(--muted);background:var(--panel2);border-radius:10px;padding:9px 12px;margin-top:10px;line-height:1.5}
+  .divider{display:flex;align-items:center;gap:10px;margin:18px 0 12px;color:var(--muted);font-size:12px}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+  .mytmpls{display:flex;flex-direction:column;gap:8px}
+  .mytmpl{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:12px;padding:10px 12px;cursor:pointer}
+  .mytmpl:active{border-color:var(--warn)}
+  .mytmpl .ic{font-size:20px;flex:none}
+  .mytmpl .mt{flex:1;min-width:0}
+  .mytmpl .mt b{font-size:14px;font-weight:600;display:block}
+  .mytmpl .mt small{font-size:11px;color:var(--muted)}
+  .mytmpl .rm{flex:none;background:none;border:none;color:var(--muted);font-size:16px;padding:4px 6px;cursor:pointer}
+  .mytmpl .rm:active{color:var(--danger)}
+  /* data menu rows */
+  .datarow{display:flex;align-items:center;gap:12px;width:100%;background:var(--panel2);border:1px solid var(--line);
+    border-radius:12px;padding:13px 14px;color:var(--text);font-size:15px;cursor:pointer;font-family:inherit;margin-bottom:9px;text-align:left}
+  .datarow:active{background:var(--chip)}
+  .datarow .di{font-size:20px;flex:none}
+  .datarow .dt{flex:1}
+  .datarow .dt small{display:block;font-size:11.5px;color:var(--muted);font-weight:400;margin-top:1px}
+  .datarow.warn{color:var(--danger)}
+  .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 100px);transform:translateX(-50%);
+    background:var(--text);color:var(--bg);font-size:13px;padding:10px 18px;border-radius:99px;z-index:60;
+    opacity:0;transition:opacity .25s;pointer-events:none;box-shadow:var(--shadow)}
+  .toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <div class="htxt">
+    <h1>🧭 イベント先読み分析</h1>
+    <div class="sub">来る予定を、事前に「考えておくべき観点」で洗い出す</div>
+  </div>
+  <button class="menubtn" id="menubtn" title="データ・テンプレ">≡</button>
+</header>
+
+<div class="wrap" id="list"></div>
+
+<button class="fab" id="fab">＋</button>
+
+<!-- add sheet -->
+<div class="modal" id="modal">
+  <div class="bd" data-close></div>
+  <div class="sheet">
+    <h2>イベントを追加</h2>
+    <div class="hint">種別を選ぶと、その分野で考えるべき観点が自動で並びます</div>
+    <div class="field">
+      <label>イベント名</label>
+      <input type="text" id="f-name" placeholder="例：バスケの試合 / 面談 / 決算発表">
+    </div>
+    <div class="field">
+      <label>日時</label>
+      <input type="datetime-local" id="f-when">
+    </div>
+    <div class="field">
+      <label>種別プリセット</label>
+      <div class="seg" id="f-types"></div>
+    </div>
+    <div class="tmplnote" id="tmplnote"></div>
+
+    <div id="mytmpl-section" style="display:none">
+      <div class="divider">または マイテンプレから</div>
+      <div class="mytmpls" id="f-mytmpls"></div>
+    </div>
+
+    <button class="go" id="f-go">この観点で分析を作る</button>
+  </div>
+</div>
+
+<!-- data/menu sheet -->
+<div class="modal" id="datamodal">
+  <div class="bd" data-close></div>
+  <div class="sheet">
+    <h2>🗂 データ・テンプレ</h2>
+    <div class="hint">アップデートしても消えないよう、時々バックアップを取りましょう</div>
+    <button class="datarow" id="d-export"><span class="di">💾</span><span class="dt">JSONで書き出し（バックアップ）<small>全イベントとマイテンプレを1ファイルに保存</small></span></button>
+    <button class="datarow" id="d-import"><span class="di">📥</span><span class="dt">JSONを読み込み（復元・移行）<small>別端末のデータもマージして取り込む</small></span></button>
+    <button class="datarow" id="d-md"><span class="di">📝</span><span class="dt">Markdownで書き出し<small>第二の脳など外部メモへ貼れる形式</small></span></button>
+    <div class="divider">マイテンプレ管理</div>
+    <div class="mytmpls" id="d-mytmpls"></div>
+    <div class="tmplnote" id="d-tmplnote" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<input type="file" id="fileinput" accept="application/json,.json" style="display:none">
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- 分析フレーム（8つの共通観点） ---------- */
+const ASPECTS = [
+  {key:'goal',  emoji:'🎯', name:'目的・ゴール'},
+  {key:'time',  emoji:'⏰', name:'期限・逆算'},
+  {key:'prep',  emoji:'✅', name:'準備タスク'},
+  {key:'risk',  emoji:'⚠️', name:'リスク・懸念'},
+  {key:'money', emoji:'💰', name:'お金への影響'},
+  {key:'people',emoji:'👥', name:'関係者'},
+  {key:'info',  emoji:'🔍', name:'事前に調べること'},
+  {key:'decide',emoji:'🧭', name:'決めておく判断'},
+];
+
+/* ---------- 種別テンプレ（初期のたたき台項目） ---------- */
+const TYPES = {
+  sport:{icon:'🏀', label:'スポーツ',
+    seed:{goal:['この試合のゴール（勝つ/楽しむ/怪我しない）','自分の役割・意識すること'],
+      time:['当日の起床・出発時刻を決める','前夜にやること（早めの就寝）'],
+      prep:['ユニフォーム・シューズ・すね当て','ドリンク・補給食','テーピング/サポーター','会場と集合時間の確認'],
+      risk:['怪我（捻挫・突き指）の予防とケア用品','寝坊・遅刻','体調・コンディション','移動の渋滞'],
+      money:['交通費・駐車場代','飲み物・食事代'],
+      people:['チームメイト・監督への連絡','送迎の調整','家族に予定を共有'],
+      info:['対戦相手の情報','会場アクセス・天気','コート/更衣室の場所'],
+      decide:['体調が悪い時どうするか','出場が難しい時の連絡ルート']}},
+  work:{icon:'💼', label:'仕事',
+    seed:{goal:['このイベントで達成したいこと','避けたい失敗'],
+      time:['締切から逆算した準備スケジュール','当日の段取り'],
+      prep:['資料・持ち物の準備','事前確認・下調べ'],
+      risk:['起こりうるトラブルと対策','抜け漏れチェック'],
+      money:['費用・経費','機会損失・リターン'],
+      people:['関係者への連絡・共有','巻き込むべき人'],
+      info:['判断に必要な未知の情報','事前に集めるデータ'],
+      decide:['当日迷わないための事前決定','代替案（プランB）']}},
+  invest:{icon:'📈', label:'投資',
+    seed:{goal:['このイベントで何を判断したいか','狙い（利確/損切り/様子見）'],
+      time:['発表・権利日など重要日時','事前に見ておくタイミング'],
+      prep:['対象銘柄・数量の整理','注文の準備'],
+      risk:['想定シナリオ（上/下）と対応','許容できる損失ライン'],
+      money:['投じる金額・比率','手数料・税金'],
+      people:['（あれば）相談相手'],
+      info:['決算/指標/ニュースの確認','過去の反応の傾向'],
+      decide:['エントリー/エグジット条件','ダメだった時の撤退ライン']}},
+  family:{icon:'👨‍👩‍👧', label:'家族',
+    seed:{goal:['このイベントで大事にしたいこと'],
+      time:['準備の締切','当日のスケジュール'],
+      prep:['持ち物・予約・手配','必要な買い物'],
+      risk:['天候・体調・ぐずり対策','予備プラン'],
+      money:['予算','支払い方法'],
+      people:['連絡・調整する相手','役割分担'],
+      info:['場所・営業時間・混雑','アクセス'],
+      decide:['雨天時どうするか','解散/帰宅の目安']}},
+  health:{icon:'🩺', label:'健康',
+    seed:{goal:['この受診/検査で確認したいこと'],
+      time:['予約日時','前日・当日の準備タイミング'],
+      prep:['保険証・問診メモ・お薬手帳','絶食など事前指示の確認'],
+      risk:['気になる症状の記録','聞き忘れ防止メモ'],
+      money:['費用の目安','支払い方法'],
+      people:['付き添い・送迎','職場への連絡'],
+      info:['病院の場所・受付時間','必要書類'],
+      decide:['質問リスト','次回予約の要否']}},
+  study:{icon:'📚', label:'学習・資格',
+    seed:{goal:['この機会の目標（合格/理解）'],
+      time:['本番日から逆算した学習計画','当日の持ち込み準備'],
+      prep:['教材・過去問','受験票・持ち物'],
+      risk:['苦手分野の対策','時間配分の失敗'],
+      money:['受験料・教材費'],
+      people:['（あれば）勉強仲間・相談先'],
+      info:['試験範囲・会場・形式','合格ライン'],
+      decide:['当日の時間配分','捨て問の基準']}},
+  money:{icon:'🏦', label:'お金・手続き',
+    seed:{goal:['この手続きのゴール'],
+      time:['締切・期限','逆算した準備'],
+      prep:['必要書類・印鑑・番号類','記入・下書き'],
+      risk:['書類不備・締切超過','控えの保管'],
+      money:['費用・手数料','損得の比較'],
+      people:['窓口・担当者','家族への共有'],
+      info:['必要要件・持ち物','受付時間・場所'],
+      decide:['選択肢の比較と決定','保留する場合の条件']}},
+  other:{icon:'📌', label:'その他',
+    seed:{goal:['このイベントのゴール'],time:['期限・当日の段取り'],prep:['準備すること'],
+      risk:['起こりうる問題と対策'],money:['お金への影響'],people:['関係者'],
+      info:['事前に調べること'],decide:['決めておく判断']}},
+};
+
+/* ---------- state ---------- */
+const KEY='eventAnalyzer.v1';
+let state = load();
+
+function load(){
+  try{ const s=JSON.parse(localStorage.getItem(KEY)); if(s&&s.events){ if(!s.templates)s.templates=[]; return s; } }catch(e){}
+  return seedInitial();
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+/* 初回：バスケの試合をサンプル投入 */
+function seedInitial(){
+  const d=new Date(); d.setDate(d.getDate()+1); d.setHours(10,0,0,0);
+  const ev = makeEvent('バスケの試合', d.toISOString(), 'sport');
+  return {events:[ev], templates:[]};
+}
+
+/* 種別プリセットからイベント生成 */
+function makeEvent(name, whenISO, type){
+  const t = TYPES[type]||TYPES.other;
+  return buildEvent(name, whenISO, type, t.seed);
+}
+/* 任意の項目セット(seedMap: {aspectKey:[tx,...]})からイベント生成 */
+function buildEvent(name, whenISO, type, seedMap){
+  const aspects = {};
+  ASPECTS.forEach(a=>{
+    aspects[a.key] = (seedMap[a.key]||[]).map(tx=>({id:uid(), tx, done:false}));
+  });
+  return {id:uid(), name, when:whenISO, type, aspects, note:''};
+}
+function uid(){ return Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4); }
+
+/* ---------- render list ---------- */
+const listEl = document.getElementById('list');
+
+function render(){
+  const evs = [...state.events].sort((a,b)=> new Date(a.when)-new Date(b.when));
+  if(!evs.length){
+    listEl.innerHTML = `<div class="empty"><div class="big">🗓️</div>まだイベントがありません。<br>右下の＋から追加してください。</div>`;
+    return;
+  }
+  listEl.innerHTML = evs.map(renderEvent).join('');
+}
+
+function cd(when){
+  const now=new Date(), t=new Date(when);
+  const ms=t-now, day=86400000;
+  if(ms<0) return {cls:'cd-past', tx:'終了'};
+  const h=ms/3600000;
+  let tx;
+  if(h<24){ tx = h<1 ? 'まもなく' : `あと${Math.floor(h)}時間`; }
+  else{ tx=`あと${Math.floor(ms/day)}日`; }
+  const cls = h<24?'cd-soon': h<72?'cd-near':'cd-far';
+  return {cls, tx};
+}
+function fmtWhen(when){
+  const d=new Date(when);
+  const w=['日','月','火','水','木','金','土'][d.getDay()];
+  const hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0');
+  return `${d.getMonth()+1}/${d.getDate()}(${w}) ${hh}:${mm}`;
+}
+function progOf(ev){
+  let done=0,total=0;
+  ASPECTS.forEach(a=>ev.aspects[a.key].forEach(i=>{total++; if(i.done)done++;}));
+  return {done,total,pct: total? Math.round(done/total*100):0};
+}
+function renderEvent(ev){
+  const t=TYPES[ev.type]||TYPES.other;
+  const c=cd(ev.when), p=progOf(ev);
+  return `<div class="card" data-ev="${ev.id}">
+    <div class="evhead" onclick="toggleCard('${ev.id}')">
+      <div class="evicon">${t.icon}</div>
+      <div class="evtitle">
+        <h2>${esc(ev.name)}</h2>
+        <div class="evmeta">
+          <span class="countdown ${c.cls}">${c.tx}</span>
+          <span class="chip">${fmtWhen(ev.when)}</span>
+          <span class="chip type">${t.label}</span>
+        </div>
+        <div class="prog">
+          <div class="bar"><i style="width:${p.pct}%"></i></div>
+          <span class="progtxt">${p.done}/${p.total} 済</span>
+        </div>
+      </div>
+      <div class="chev">▶</div>
+    </div>
+    <div class="body">
+      ${ASPECTS.map(a=>renderAspect(ev,a)).join('')}
+      <div class="notebox">
+        <label>📝 メモ・自由記述</label>
+        <textarea placeholder="観点にとらわれず、思ったこと・気づき・当日の状況などを自由に…"
+          oninput="updateNote('${ev.id}',this.value)">${esc(ev.note||'')}</textarea>
+      </div>
+      <div class="evactions">
+        <button class="star" onclick="saveAsTemplate('${ev.id}')">⭐ テンプレ保存</button>
+        <button onclick="editWhen('${ev.id}')">🕐 日時変更</button>
+        <button class="danger" onclick="delEvent('${ev.id}')">🗑 削除</button>
+      </div>
+    </div>
+  </div>`;
+}
+function renderAspect(ev,a){
+  const items=ev.aspects[a.key];
+  return `<div class="aspect">
+    <h3><span class="a-emoji">${a.emoji}</span>${a.name}</h3>
+    ${items.map(i=>`
+      <div class="item ${i.done?'done':''}">
+        <div class="cb ${i.done?'on':''}" onclick="toggleItem('${ev.id}','${a.key}','${i.id}')">${i.done?'✓':''}</div>
+        <div class="tx">${esc(i.tx)}</div>
+        <button class="del" onclick="delItem('${ev.id}','${a.key}','${i.id}')">×</button>
+      </div>`).join('')}
+    <div class="additem">
+      <input type="text" placeholder="追加…" id="add-${ev.id}-${a.key}"
+        onkeydown="if(event.key==='Enter')addItem('${ev.id}','${a.key}')">
+      <button onclick="addItem('${ev.id}','${a.key}')">＋</button>
+    </div>
+  </div>`;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+/* ---------- item actions ---------- */
+const openCards=new Set();
+function toggleCard(id){
+  const el=document.querySelector(`.card[data-ev="${id}"]`);
+  el.classList.toggle('open');
+  if(el.classList.contains('open'))openCards.add(id); else openCards.delete(id);
+}
+function reopen(){ openCards.forEach(id=>{const el=document.querySelector(`.card[data-ev="${id}"]`); if(el)el.classList.add('open');}); }
+function findEv(id){return state.events.find(e=>e.id===id);}
+function toggleItem(evId,ak,iId){
+  const it=findEv(evId).aspects[ak].find(i=>i.id===iId); it.done=!it.done; save(); render(); reopen();
+}
+function delItem(evId,ak,iId){
+  const ev=findEv(evId); ev.aspects[ak]=ev.aspects[ak].filter(i=>i.id!==iId); save(); render(); reopen();
+}
+function addItem(evId,ak){
+  const inp=document.getElementById(`add-${evId}-${ak}`); const v=inp.value.trim();
+  if(!v)return; findEv(evId).aspects[ak].push({id:uid(),tx:v,done:false}); save(); render(); reopen();
+  const ni=document.getElementById(`add-${evId}-${ak}`); if(ni){ni.focus();}
+}
+function delEvent(id){
+  if(!confirm('このイベントを削除しますか？'))return;
+  state.events=state.events.filter(e=>e.id!==id); openCards.delete(id); save(); render();
+}
+function updateNote(id,v){ const ev=findEv(id); if(ev){ ev.note=v; save(); } }
+function editWhen(id){
+  const ev=findEv(id); const cur=ev.when? ev.when.slice(0,16):'';
+  const v=prompt('日時を入力（YYYY-MM-DDTHH:MM）',cur);
+  if(v){ ev.when=new Date(v).toISOString(); save(); render(); reopen(); }
+}
+
+/* ---------- マイテンプレ（過去入力の再利用） ---------- */
+function saveAsTemplate(evId){
+  const ev=findEv(evId);
+  const nm=prompt('このイベントの項目構成をマイテンプレとして保存します。\nテンプレ名を入力：', ev.name);
+  if(!nm)return;
+  const seed={};
+  ASPECTS.forEach(a=>{ seed[a.key]=ev.aspects[a.key].map(i=>i.tx); });
+  state.templates.push({id:uid(), name:nm.trim(), type:ev.type, seed});
+  save(); toast('⭐ テンプレに保存しました');
+}
+function delTemplate(tid){
+  if(!confirm('このテンプレを削除しますか？'))return;
+  state.templates=state.templates.filter(t=>t.id!==tid); save(); renderMyTemplates();
+}
+function tmplItemCount(t){ return ASPECTS.reduce((n,a)=>n+((t.seed[a.key]||[]).length),0); }
+
+/* 追加シート内のマイテンプレ一覧 */
+function renderMyTemplates(){
+  const box=document.getElementById('f-mytmpls');
+  const sec=document.getElementById('mytmpl-section');
+  if(!state.templates.length){ sec.style.display='none'; }
+  else{
+    sec.style.display='block';
+    box.innerHTML=state.templates.map(t=>{
+      const ic=(TYPES[t.type]||TYPES.other).icon;
+      return `<div class="mytmpl" onclick="useTemplate('${t.id}')">
+        <span class="ic">${ic}</span>
+        <span class="mt"><b>${esc(t.name)}</b><small>${tmplItemCount(t)}項目</small></span>
+      </div>`;
+    }).join('');
+  }
+  // データメニュー側の管理一覧
+  const dbox=document.getElementById('d-mytmpls');
+  const dnote=document.getElementById('d-tmplnote');
+  if(!state.templates.length){
+    dbox.innerHTML=''; dnote.textContent='まだマイテンプレがありません。各イベントを開いて「⭐ テンプレ保存」すると、次回から新規作成時にワンタップで呼び出せます。';
+  }else{
+    dnote.textContent='';
+    dbox.innerHTML=state.templates.map(t=>{
+      const ic=(TYPES[t.type]||TYPES.other).icon;
+      return `<div class="mytmpl">
+        <span class="ic">${ic}</span>
+        <span class="mt"><b>${esc(t.name)}</b><small>${tmplItemCount(t)}項目</small></span>
+        <button class="rm" onclick="delTemplate('${t.id}')">🗑</button>
+      </div>`;
+    }).join('');
+  }
+}
+function useTemplate(tid){
+  const t=state.templates.find(x=>x.id===tid); if(!t)return;
+  const name=document.getElementById('f-name').value.trim()||t.name;
+  const whenV=document.getElementById('f-when').value;
+  const when= whenV? new Date(whenV).toISOString() : new Date().toISOString();
+  state.events.push(buildEvent(name, when, t.type, t.seed));
+  save(); closeModals(); render(); toast('テンプレから作成しました');
+}
+
+/* ---------- 追加モーダル ---------- */
+const modal=document.getElementById('modal');
+const datamodal=document.getElementById('datamodal');
+let selType='sport';
+function buildTypeButtons(){
+  const wrap=document.getElementById('f-types');
+  wrap.innerHTML=Object.entries(TYPES).map(([k,v])=>
+    `<button data-t="${k}" class="${k===selType?'sel':''}" onclick="selectType('${k}')">${v.icon} ${v.label}</button>`).join('');
+  updateTmplNote();
+}
+function selectType(k){selType=k;buildTypeButtons();}
+function updateTmplNote(){
+  const t=TYPES[selType]; const n=Object.values(t.seed).reduce((a,b)=>a+b.length,0);
+  document.getElementById('tmplnote').textContent=
+    `「${t.label}」を選ぶと、8観点に合計${n}個のたたき台項目が入ります。後から自由に編集・追加できます。`;
+}
+document.getElementById('fab').onclick=()=>{
+  document.getElementById('f-name').value='';
+  const d=new Date(); d.setDate(d.getDate()+1); d.setHours(10,0,0,0);
+  d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+  document.getElementById('f-when').value=d.toISOString().slice(0,16);
+  selType='sport'; buildTypeButtons(); renderMyTemplates(); modal.classList.add('on');
+};
+document.getElementById('f-go').onclick=()=>{
+  const name=document.getElementById('f-name').value.trim()||'無題のイベント';
+  const whenV=document.getElementById('f-when').value;
+  const when= whenV? new Date(whenV).toISOString() : new Date().toISOString();
+  state.events.push(makeEvent(name,when,selType));
+  save(); closeModals(); render();
+};
+function closeModals(){ modal.classList.remove('on'); datamodal.classList.remove('on'); }
+document.querySelectorAll('[data-close]').forEach(el=>el.onclick=closeModals);
+
+/* ---------- データメニュー ---------- */
+document.getElementById('menubtn').onclick=()=>{ renderMyTemplates(); datamodal.classList.add('on'); };
+
+document.getElementById('d-export').onclick=()=>{
+  const data=JSON.stringify(state,null,2);
+  download(`event_analyzer_backup_${today()}.json`, data, 'application/json');
+  toast('💾 バックアップを書き出しました');
+};
+document.getElementById('d-import').onclick=()=> document.getElementById('fileinput').click();
+document.getElementById('fileinput').onchange=(e)=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const inc=JSON.parse(r.result);
+      if(!inc.events) throw new Error('形式が違います');
+      mergeById(state.events, inc.events||[]);
+      mergeById(state.templates, inc.templates||[]);
+      save(); render(); renderMyTemplates(); toast('📥 読み込み・マージしました');
+    }catch(err){ alert('読み込めませんでした：'+err.message); }
+    e.target.value='';
+  };
+  r.readAsText(f);
+};
+document.getElementById('d-md').onclick=()=>{
+  download(`event_analyzer_${today()}.md`, toMarkdown(), 'text/markdown');
+  toast('📝 Markdownを書き出しました');
+};
+
+/* id重複を避けてマージ（同idは取り込み側を優先で上書き） */
+function mergeById(dst, incoming){
+  const map=new Map(dst.map(x=>[x.id,x]));
+  incoming.forEach(x=>map.set(x.id,x));
+  dst.length=0; map.forEach(v=>dst.push(v));
+}
+function toMarkdown(){
+  const evs=[...state.events].sort((a,b)=>new Date(a.when)-new Date(b.when));
+  let md=`# イベント先読み分析（${today()}）\n\n`;
+  evs.forEach(ev=>{
+    const t=TYPES[ev.type]||TYPES.other;
+    md+=`## ${t.icon} ${ev.name}\n- 日時: ${fmtWhen(ev.when)} / 種別: ${t.label}\n\n`;
+    ASPECTS.forEach(a=>{
+      const items=ev.aspects[a.key]; if(!items.length)return;
+      md+=`### ${a.emoji} ${a.name}\n`;
+      items.forEach(i=>{ md+=`- [${i.done?'x':' '}] ${i.tx}\n`; });
+      md+='\n';
+    });
+    if(ev.note && ev.note.trim()){ md+=`### 📝 メモ\n${ev.note.trim()}\n\n`; }
+  });
+  return md;
+}
+function download(filename, text, mime){
+  const blob=new Blob([text],{type:mime});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+}
+function today(){ const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`; }
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg){
+  const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('on');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('on'),1800);
+}
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "救急観察支援メモ",
+  "short_name": "救急メモ",
+  "start_url": "kyukyu.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef2f4",
+  "theme_color": "#0d7a8c",
+  "lang": "ja",
+  "icons": [
+    { "src": "apple-touch-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "apple-touch-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

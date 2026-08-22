@@ -1,0 +1,529 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f6feb">
+<title>生活ログ</title>
+<style>
+  /* ===== カラー・基本 ===== */
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+    --text:#e7eaf0; --muted:#9aa4b2; --accent:#3b82f6; --accent2:#22c55e;
+    --danger:#ef4444; --warn:#f59e0b; --radius:14px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f4f6fa; --panel:#ffffff; --panel2:#f0f3f8; --line:#dfe4ec;
+      --text:#1a2230; --muted:#5b6675; --accent:#2563eb; --accent2:#16a34a;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.6;
+    -webkit-text-size-adjust:100%; padding-bottom:96px;
+  }
+  header{
+    position:sticky; top:0; z-index:20; background:var(--bg);
+    border-bottom:1px solid var(--line);
+    padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;
+  }
+  header h1{font-size:18px; margin:0; display:flex; align-items:center; gap:8px}
+  .wrap{max-width:720px; margin:0 auto; padding:16px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:14px}
+  label{display:block; font-size:13px; color:var(--muted); margin:10px 0 4px}
+  textarea,input[type=text],input[type=search],input[type=date],input[type=datetime-local],select{
+    width:100%; background:var(--panel2); color:var(--text);
+    border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    font-size:16px; font-family:inherit;
+  }
+  textarea{resize:vertical; min-height:52px}
+  .mood-row{display:flex; gap:8px; margin-top:6px}
+  .mood-row button{
+    flex:1; font-size:24px; padding:8px 0; background:var(--panel2);
+    border:1px solid var(--line); border-radius:10px; cursor:pointer; line-height:1;
+    filter:grayscale(1) opacity(.55); transition:.12s;
+  }
+  .mood-row button.on{filter:none; border-color:var(--accent); background:color-mix(in srgb,var(--accent) 15%,var(--panel2))}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:11px 16px; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit;
+  }
+  .btn.sec{background:var(--panel2); color:var(--text); border:1px solid var(--line)}
+  .btn.g{background:var(--accent2)}
+  .btn.d{background:transparent; color:var(--danger); border:1px solid var(--line)}
+  .btn:active{transform:translateY(1px)}
+  .row{display:flex; gap:8px; flex-wrap:wrap}
+  .row>*{flex:1; min-width:0}
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:30;
+    display:flex; background:var(--panel); border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .tabbar button{
+    flex:1; background:none; border:none; color:var(--muted); font-family:inherit;
+    padding:10px 0 12px; font-size:11px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;
+  }
+  .tabbar button .ic{font-size:20px}
+  .tabbar button.on{color:var(--accent)}
+  .view{display:none}
+  .view.on{display:block}
+  .entry{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:13px; margin-bottom:12px}
+  .entry .meta{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-bottom:6px}
+  .entry .meta .m{font-size:18px; filter:none}
+  .entry h3{font-size:12px; color:var(--muted); margin:8px 0 2px; font-weight:600}
+  .entry p{margin:0; white-space:pre-wrap; word-break:break-word}
+  .tags{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+  .tag{font-size:12px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); padding:2px 9px; border-radius:999px; cursor:pointer}
+  .tag.on{background:var(--accent); color:#fff; border-color:var(--accent)}
+  .muted{color:var(--muted)}
+  .empty{text-align:center; color:var(--muted); padding:48px 12px}
+  .barrow{display:flex; align-items:center; gap:8px; margin:4px 0; font-size:13px}
+  .barrow .name{width:34%; text-align:right; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .barrow .track{flex:1; background:var(--panel2); border-radius:6px; height:16px; overflow:hidden}
+  .barrow .fill{height:100%; background:var(--accent)}
+  .barrow .num{width:34px; text-align:left; color:var(--muted)}
+  .stat{display:flex; gap:10px}
+  .stat .box{flex:1; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:10px; text-align:center}
+  .stat .box b{font-size:22px; display:block}
+  .stat .box span{font-size:11px; color:var(--muted)}
+  .seg{display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap}
+  .seg button{flex:1; padding:8px 4px; font-size:13px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); border-radius:8px; cursor:pointer; font-family:inherit}
+  .seg button.on{background:var(--accent); color:#fff; border-color:var(--accent)}
+  .toast{position:fixed; left:50%; bottom:86px; transform:translateX(-50%); background:#111827; color:#fff; padding:10px 16px; border-radius:999px; font-size:13px; opacity:0; transition:.2s; z-index:50; pointer-events:none}
+  .toast.on{opacity:.96}
+  .hint{font-size:12px; color:var(--muted); margin-top:6px}
+  svg text{fill:var(--muted)}
+</style>
+
+<header><div class="wrap" style="padding:0"><h1>📓 生活ログ</h1></div></header>
+
+<!-- ===== 記録タブ ===== -->
+<section id="view-write" class="view on wrap">
+  <div class="card">
+    <div id="editingBadge" class="hint" style="display:none; color:var(--warn)">✎ 編集中（保存で上書き）</div>
+    <div id="tmplBar" class="tags" style="margin-bottom:2px"></div>
+    <label>何をしたか</label>
+    <textarea id="fDid" placeholder="例）朝ラン30分。午後は書類整理。"></textarea>
+    <label>どう思ったか（所感）</label>
+    <textarea id="fFelt" placeholder="例）走ると頭が冴える。書類は溜めると重い。"></textarea>
+    <label>次どうすべきか（next action）</label>
+    <textarea id="fNext" placeholder="例）書類は毎朝5分だけ触る習慣にする。"></textarea>
+
+    <label>気分</label>
+    <div class="mood-row" id="moodRow">
+      <button data-m="1" title="とても悪い">😖</button>
+      <button data-m="2" title="悪い">😕</button>
+      <button data-m="3" title="普通">😐</button>
+      <button data-m="4" title="良い">🙂</button>
+      <button data-m="5" title="とても良い">😄</button>
+    </div>
+
+    <label>タグ（スペース / カンマ区切り）</label>
+    <input id="fTags" type="text" placeholder="例）運動 仕事 家族" autocapitalize="off">
+    <div id="tagSuggest" class="tags"></div>
+
+    <label>日時</label>
+    <input id="fWhen" type="datetime-local">
+
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="saveBtn" style="flex:2">保存</button>
+      <button class="btn sec" id="clearBtn">クリア</button>
+    </div>
+    <button class="btn sec" id="saveTmplBtn" style="width:100%; margin-top:8px">⭐ 今の内容をマイテンプレに保存</button>
+  </div>
+</section>
+
+<!-- ===== 一覧タブ ===== -->
+<section id="view-list" class="view wrap">
+  <div class="card">
+    <input id="q" type="search" placeholder="🔎 キーワードで絞り込み" autocapitalize="off">
+    <div id="tagFilter" class="tags" style="margin-top:10px"></div>
+    <div class="row" style="margin-top:10px">
+      <div><label style="margin:0 0 4px">開始</label><input id="fFrom" type="date"></div>
+      <div><label style="margin:0 0 4px">終了</label><input id="fTo" type="date"></div>
+    </div>
+    <div class="hint" id="listCount"></div>
+  </div>
+  <div id="list"></div>
+</section>
+
+<!-- ===== 振り返りタブ ===== -->
+<section id="view-review" class="view wrap">
+  <div class="seg" id="periodSeg">
+    <button data-p="7">直近7日</button>
+    <button data-p="30" class="on">今月(30日)</button>
+    <button data-p="90">90日</button>
+    <button data-p="0">全期間</button>
+  </div>
+  <div class="card">
+    <div class="stat">
+      <div class="box"><b id="stCount">0</b><span>記録数</span></div>
+      <div class="box"><b id="stMood">–</b><span>平均気分</span></div>
+      <div class="box"><b id="stDays">0</b><span>記録した日数</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0; font-size:14px">気分の推移</h3>
+    <div id="moodChart"></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0; font-size:14px">タグ集計</h3>
+    <div id="tagStats"></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0; font-size:14px">next action（未整理の抜き出し）</h3>
+    <div id="nextList"></div>
+  </div>
+</section>
+
+<!-- ===== データタブ ===== -->
+<section id="view-data" class="view wrap">
+  <div class="card">
+    <h3 style="margin-top:0">バックアップ / 復元</h3>
+    <p class="hint">データはこの端末のブラウザ内（localStorage）にのみ保存されます。機種変更・履歴削除に備え、時々JSONを書き出してください。</p>
+    <div class="row" style="margin-top:8px">
+      <button class="btn g" id="expJson">JSON書き出し</button>
+      <button class="btn sec" id="impBtn">JSON読み込み</button>
+    </div>
+    <input id="impFile" type="file" accept="application/json,.json" style="display:none">
+    <div style="margin-top:10px">
+      <button class="btn sec" id="expMd" style="width:100%">Markdownで書き出し（第二の脳に貼る用）</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">🗂 マイテンプレ管理</h3>
+    <p class="hint">記録タブで「⭐ 今の内容をマイテンプレに保存」すると、次回からワンタップで呼び出せます。</p>
+    <div id="tmplManage"></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">全消去</h3>
+    <p class="hint">この端末のログを全て削除します。取り消せません。</p>
+    <button class="btn d" id="wipeBtn">すべて削除</button>
+  </div>
+  <div class="card">
+    <p class="hint" id="storeInfo"></p>
+  </div>
+</section>
+
+<nav class="tabbar" id="tabbar">
+  <button data-v="write" class="on"><span class="ic">✍️</span>記録</button>
+  <button data-v="list"><span class="ic">📚</span>一覧</button>
+  <button data-v="review"><span class="ic">📊</span>振り返り</button>
+  <button data-v="data"><span class="ic">💾</span>データ</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== ストレージ ===== */
+const KEY = "seikatsu_log_v1";
+const load = () => { try{ return JSON.parse(localStorage.getItem(KEY)) || [] }catch(e){ return [] } };
+const save = arr => localStorage.setItem(KEY, JSON.stringify(arr));
+let entries = load();          // 全ログ（配列）
+
+/* マイテンプレ（既存ログとは別キーで保存＝ログに影響なし） */
+const TKEY = "seikatsu_tmpl_v1";
+const loadT = () => { try{ return JSON.parse(localStorage.getItem(TKEY)) || [] }catch(e){ return [] } };
+const saveT = () => localStorage.setItem(TKEY, JSON.stringify(templates));
+let templates = loadT();       // マイテンプレ（配列）
+let editingId = null;          // 編集中のID
+let moodPick = 0;              // 選択中の気分
+let activeTags = new Set();    // 一覧の絞り込みタグ
+let period = 30;               // 振り返りの対象日数(0=全期間)
+
+const $ = s => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const moodEmoji = ["","😖","😕","😐","🙂","😄"];
+
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); setTimeout(()=>t.classList.remove("on"),1600); }
+
+/* ローカル日時をdatetime-local用文字列へ */
+function toLocalInput(d){ const p=n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
+function fmt(ts){ const d=new Date(ts); const p=n=>String(n).padStart(2,"0");
+  const w=["日","月","火","水","木","金","土"][d.getDay()];
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}(${w}) ${p(d.getHours())}:${p(d.getMinutes())}`; }
+function parseTags(str){ return (str||"").split(/[\s,、，]+/).map(s=>s.trim()).filter(Boolean); }
+
+/* ===== タブ切替 ===== */
+$("#tabbar").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  document.querySelectorAll(".tabbar button").forEach(x=>x.classList.toggle("on",x===b));
+  const v=b.dataset.v;
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  $("#view-"+v).classList.add("on");
+  window.scrollTo(0,0);
+  if(v==="list") renderList();
+  if(v==="review") renderReview();
+  if(v==="data"){ renderStoreInfo(); renderTmplManage(); }
+});
+
+/* ===== 気分ボタン ===== */
+$("#moodRow").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  moodPick = Number(b.dataset.m);
+  document.querySelectorAll("#moodRow button").forEach(x=>x.classList.toggle("on",x===b));
+});
+
+/* ===== タグ候補 ===== */
+function allTags(){ const c={}; entries.forEach(e=>(e.tags||[]).forEach(t=>c[t]=(c[t]||0)+1));
+  return Object.keys(c).sort((a,b)=>c[b]-c[a]); }
+function renderTagSuggest(){
+  const box=$("#tagSuggest"); box.innerHTML="";
+  allTags().slice(0,12).forEach(t=>{
+    const el=document.createElement("span"); el.className="tag"; el.textContent="#"+t;
+    el.onclick=()=>{ const cur=parseTags($("#fTags").value); if(!cur.includes(t)){cur.push(t); $("#fTags").value=cur.join(" ");} };
+    box.appendChild(el);
+  });
+}
+
+/* ===== マイテンプレ ===== */
+/* 記録タブ上部のテンプレチップ（タップでフォームに流し込み） */
+function renderTmplBar(){
+  const box=$("#tmplBar"); box.innerHTML="";
+  if(!templates.length) return;
+  templates.forEach(t=>{
+    const el=document.createElement("span");
+    el.className="tag"; el.style.borderColor="var(--accent2)";
+    el.textContent="⭐ "+t.name;
+    el.onclick=()=>applyTemplate(t.id);
+    box.appendChild(el);
+  });
+}
+function applyTemplate(id){
+  const t=templates.find(x=>x.id===id); if(!t) return;
+  $("#fDid").value=t.did||""; $("#fFelt").value=t.felt||""; $("#fNext").value=t.next||"";
+  $("#fTags").value=(t.tags||[]).join(" ");
+  moodPick=t.mood||0;
+  document.querySelectorAll("#moodRow button").forEach(x=>x.classList.toggle("on",Number(x.dataset.m)===moodPick));
+  toast("テンプレを反映しました");
+}
+$("#saveTmplBtn").onclick=()=>{
+  const did=$("#fDid").value.trim(), felt=$("#fFelt").value.trim(), next=$("#fNext").value.trim();
+  if(!did && !felt && !next && !$("#fTags").value.trim()){ toast("先に内容を入力してください"); return; }
+  const name=prompt("マイテンプレの名前を入力：", did.slice(0,12) || "テンプレ");
+  if(!name) return;
+  templates.push({ id:uid(), name:name.trim(), did, felt, next, mood:moodPick, tags:parseTags($("#fTags").value) });
+  saveT(); renderTmplBar(); renderTmplManage();
+  toast("⭐ テンプレに保存しました");
+};
+/* データタブのテンプレ管理一覧 */
+function renderTmplManage(){
+  const box=$("#tmplManage"); if(!box) return;
+  if(!templates.length){ box.innerHTML=`<div class="empty" style="padding:20px">まだマイテンプレがありません</div>`; return; }
+  box.innerHTML="";
+  templates.forEach(t=>{
+    const row=document.createElement("div");
+    row.style.cssText="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--line)";
+    const cnt=(t.tags||[]).length;
+    row.innerHTML=`<span style="flex:1; min-width:0">⭐ ${esc(t.name)}<span class="muted" style="font-size:11px">　${esc((t.did||"").slice(0,20))}${cnt?` #${cnt}`:""}</span></span>`;
+    const del=document.createElement("button"); del.className="btn d"; del.textContent="削除"; del.style.padding="6px 12px";
+    del.onclick=()=>{ if(confirm(`テンプレ「${t.name}」を削除しますか？`)){ templates=templates.filter(x=>x.id!==t.id); saveT(); renderTmplBar(); renderTmplManage(); toast("削除しました"); } };
+    row.appendChild(del); box.appendChild(row);
+  });
+}
+
+/* ===== 保存 ===== */
+function resetForm(){
+  $("#fDid").value=$("#fFelt").value=$("#fNext").value=$("#fTags").value="";
+  moodPick=0; document.querySelectorAll("#moodRow button").forEach(x=>x.classList.remove("on"));
+  $("#fWhen").value=toLocalInput(new Date());
+  editingId=null; $("#editingBadge").style.display="none"; $("#saveBtn").textContent="保存";
+}
+$("#clearBtn").onclick=()=>{ resetForm(); toast("クリアしました"); };
+
+$("#saveBtn").onclick=()=>{
+  const did=$("#fDid").value.trim(), felt=$("#fFelt").value.trim(), next=$("#fNext").value.trim();
+  if(!did && !felt && !next){ toast("何か入力してください"); return; }
+  const whenStr=$("#fWhen").value; const ts = whenStr ? new Date(whenStr).getTime() : Date.now();
+  const rec={ id:editingId||uid(), ts, did, felt, next, mood:moodPick, tags:parseTags($("#fTags").value) };
+  if(editingId){ const i=entries.findIndex(e=>e.id===editingId); if(i>=0) entries[i]=rec; }
+  else entries.push(rec);
+  save(entries); resetForm(); renderTagSuggest();
+  toast("保存しました ✓");
+};
+
+/* ===== 一覧 ===== */
+function renderTagFilter(){
+  const box=$("#tagFilter"); box.innerHTML="";
+  allTags().forEach(t=>{
+    const el=document.createElement("span");
+    el.className="tag"+(activeTags.has(t)?" on":""); el.textContent="#"+t;
+    el.onclick=()=>{ activeTags.has(t)?activeTags.delete(t):activeTags.add(t); renderList(); };
+    box.appendChild(el);
+  });
+}
+function currentFilter(){
+  const q=$("#q").value.trim().toLowerCase();
+  const from=$("#fFrom").value? new Date($("#fFrom").value+"T00:00").getTime():null;
+  const to=$("#fTo").value? new Date($("#fTo").value+"T23:59:59").getTime():null;
+  return entries.filter(e=>{
+    if(from && e.ts<from) return false;
+    if(to && e.ts>to) return false;
+    if(activeTags.size && ![...activeTags].every(t=>(e.tags||[]).includes(t))) return false;
+    if(q){ const hay=(e.did+" "+e.felt+" "+e.next+" "+(e.tags||[]).join(" ")).toLowerCase(); if(!hay.includes(q)) return false; }
+    return true;
+  }).sort((a,b)=>b.ts-a.ts);
+}
+function renderList(){
+  renderTagFilter();
+  const arr=currentFilter();
+  $("#listCount").textContent=`${arr.length}件`;
+  const box=$("#list");
+  if(!arr.length){ box.innerHTML=`<div class="empty">まだ記録がありません</div>`; return; }
+  box.innerHTML="";
+  arr.forEach(e=>{
+    const d=document.createElement("div"); d.className="entry";
+    let h=`<div class="meta"><span class="m">${e.mood?moodEmoji[e.mood]:""}</span><span>${fmt(e.ts)}</span></div>`;
+    if(e.did) h+=`<h3>何をしたか</h3><p>${esc(e.did)}</p>`;
+    if(e.felt) h+=`<h3>どう思ったか</h3><p>${esc(e.felt)}</p>`;
+    if(e.next) h+=`<h3>次どうすべきか</h3><p>${esc(e.next)}</p>`;
+    if((e.tags||[]).length) h+=`<div class="tags">${e.tags.map(t=>`<span class="tag">#${esc(t)}</span>`).join("")}</div>`;
+    h+=`<div class="row" style="margin-top:10px"><button class="btn sec ed">編集</button><button class="btn d del">削除</button></div>`;
+    d.innerHTML=h;
+    d.querySelector(".ed").onclick=()=>startEdit(e.id);
+    d.querySelector(".del").onclick=()=>{ if(confirm("この記録を削除しますか？")){ entries=entries.filter(x=>x.id!==e.id); save(entries); renderList(); toast("削除しました"); } };
+    box.appendChild(d);
+  });
+}
+function esc(s){ return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+$("#q").addEventListener("input", renderList);
+$("#fFrom").addEventListener("change", renderList);
+$("#fTo").addEventListener("change", renderList);
+
+function startEdit(id){
+  const e=entries.find(x=>x.id===id); if(!e) return;
+  $("#fDid").value=e.did||""; $("#fFelt").value=e.felt||""; $("#fNext").value=e.next||"";
+  $("#fTags").value=(e.tags||[]).join(" "); $("#fWhen").value=toLocalInput(new Date(e.ts));
+  moodPick=e.mood||0;
+  document.querySelectorAll("#moodRow button").forEach(x=>x.classList.toggle("on",Number(x.dataset.m)===moodPick));
+  editingId=id; $("#editingBadge").style.display="block"; $("#saveBtn").textContent="上書き保存";
+  document.querySelectorAll(".tabbar button").forEach(x=>x.classList.toggle("on",x.dataset.v==="write"));
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on")); $("#view-write").classList.add("on");
+  window.scrollTo(0,0);
+}
+
+/* ===== 振り返り ===== */
+$("#periodSeg").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  period=Number(b.dataset.p);
+  document.querySelectorAll("#periodSeg button").forEach(x=>x.classList.toggle("on",x===b));
+  renderReview();
+});
+function inPeriod(){
+  if(!period) return entries.slice();
+  const from=Date.now()-period*86400000;
+  return entries.filter(e=>e.ts>=from);
+}
+function renderReview(){
+  const arr=inPeriod();
+  $("#stCount").textContent=arr.length;
+  const moods=arr.filter(e=>e.mood).map(e=>e.mood);
+  $("#stMood").textContent = moods.length ? (moods.reduce((a,b)=>a+b,0)/moods.length).toFixed(1) : "–";
+  const days=new Set(arr.map(e=>new Date(e.ts).toDateString()));
+  $("#stDays").textContent=days.size;
+  renderMoodChart(arr);
+  renderTagStats(arr);
+  renderNextList(arr);
+}
+/* 気分推移：日別平均を折れ線(SVG)で */
+function renderMoodChart(arr){
+  const box=$("#moodChart");
+  const withMood=arr.filter(e=>e.mood);
+  if(!withMood.length){ box.innerHTML=`<div class="empty" style="padding:20px">気分の記録がありません</div>`; return; }
+  const byDay={};
+  withMood.forEach(e=>{ const k=new Date(e.ts); const key=`${k.getFullYear()}-${k.getMonth()+1}-${k.getDate()}`;
+    (byDay[key]=byDay[key]||[]).push(e.mood); });
+  const keys=Object.keys(byDay).sort((a,b)=>new Date(a)-new Date(b));
+  const pts=keys.map(k=>({k, v:byDay[k].reduce((a,b)=>a+b,0)/byDay[k].length}));
+  const W=Math.max(320, box.clientWidth||320), H=150, pad=24;
+  const n=pts.length;
+  const x=i=> n===1? W/2 : pad + i*(W-2*pad)/(n-1);
+  const y=v=> H-pad - (v-1)/4*(H-2*pad);
+  let path=""; pts.forEach((p,i)=>path+=(i?"L":"M")+x(i).toFixed(1)+","+y(p.v).toFixed(1)+" ");
+  let dots=pts.map((p,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="3" fill="var(--accent)"/>`).join("");
+  let grid=""; for(let m=1;m<=5;m++){ const gy=y(m); grid+=`<line x1="${pad}" y1="${gy}" x2="${W-pad}" y2="${gy}" stroke="var(--line)" stroke-width="1"/><text x="2" y="${gy+4}" font-size="10">${moodEmoji[m]}</text>`; }
+  const lbl=`<text x="${pad}" y="${H-4}" font-size="10">${pts[0].k.slice(5)}</text>`+
+            (n>1?`<text x="${W-pad}" y="${H-4}" font-size="10" text-anchor="end">${pts[n-1].k.slice(5)}</text>`:"");
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">${grid}<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2"/>${dots}${lbl}</svg>`;
+}
+/* タグ集計：横棒 */
+function renderTagStats(arr){
+  const box=$("#tagStats"); const c={};
+  arr.forEach(e=>(e.tags||[]).forEach(t=>c[t]=(c[t]||0)+1));
+  const keys=Object.keys(c).sort((a,b)=>c[b]-c[a]).slice(0,12);
+  if(!keys.length){ box.innerHTML=`<div class="empty" style="padding:20px">タグの記録がありません</div>`; return; }
+  const max=Math.max(...keys.map(k=>c[k]));
+  box.innerHTML=keys.map(k=>`<div class="barrow"><span class="name">#${esc(k)}</span><span class="track"><span class="fill" style="width:${c[k]/max*100}%"></span></span><span class="num">${c[k]}</span></div>`).join("");
+}
+/* next action の抜き出し */
+function renderNextList(arr){
+  const box=$("#nextList");
+  const list=arr.filter(e=>e.next).sort((a,b)=>b.ts-a.ts).slice(0,15);
+  if(!list.length){ box.innerHTML=`<div class="empty" style="padding:20px">next actionの記録がありません</div>`; return; }
+  box.innerHTML=list.map(e=>`<div style="padding:8px 0; border-bottom:1px solid var(--line)"><div class="muted" style="font-size:11px">${fmt(e.ts)}</div>${esc(e.next)}</div>`).join("");
+}
+
+/* ===== データ書き出し / 読み込み ===== */
+function download(name, text, type){
+  const blob=new Blob([text],{type}); const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$("#expJson").onclick=()=>{
+  const stamp=new Date().toISOString().slice(0,10);
+  const payload={ v:2, entries, templates };
+  download(`生活ログ_${stamp}.json`, JSON.stringify(payload,null,2), "application/json");
+  toast("JSONを書き出しました");
+};
+$("#expMd").onclick=()=>{
+  const stamp=new Date().toISOString().slice(0,10);
+  const sorted=entries.slice().sort((a,b)=>a.ts-b.ts);
+  let md=`# 生活ログ（${stamp}書き出し・全${entries.length}件）\n\n`;
+  sorted.forEach(e=>{
+    md+=`## ${fmt(e.ts)} ${e.mood?moodEmoji[e.mood]:""}\n`;
+    if(e.did) md+=`**何をしたか**: ${e.did}\n\n`;
+    if(e.felt) md+=`**どう思ったか**: ${e.felt}\n\n`;
+    if(e.next) md+=`**次どうすべきか**: ${e.next}\n\n`;
+    if((e.tags||[]).length) md+=(e.tags.map(t=>"#"+t).join(" "))+"\n\n";
+    md+=`---\n\n`;
+  });
+  download(`生活ログ_${stamp}.md`, md, "text/markdown");
+  toast("Markdownを書き出しました");
+};
+$("#impBtn").onclick=()=>$("#impFile").click();
+$("#impFile").onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const data=JSON.parse(r.result);
+      // 旧形式=配列 / 新形式={entries,templates} の両対応
+      const incEntries = Array.isArray(data) ? data : (data.entries||[]);
+      const incTmpls   = Array.isArray(data) ? [] : (data.templates||[]);
+      if(!Array.isArray(incEntries)) throw 0;
+      const map={}; [...entries,...incEntries].forEach(x=>{ if(x&&x.id) map[x.id]=x; }); // idで重複マージ
+      entries=Object.values(map).map(x=>({id:x.id||uid(), ts:x.ts||Date.now(), did:x.did||"", felt:x.felt||"", next:x.next||"", mood:x.mood||0, tags:x.tags||[]}));
+      save(entries);
+      if(incTmpls.length){ const tm={}; [...templates,...incTmpls].forEach(x=>{ if(x&&x.id) tm[x.id]=x; }); templates=Object.values(tm); saveT(); renderTmplBar(); renderTmplManage(); }
+      renderTagSuggest(); renderStoreInfo();
+      toast(`読み込み完了（記録${entries.length}件／テンプレ${templates.length}件）`);
+    }catch(err){ toast("読み込めませんでした"); }
+    $("#impFile").value="";
+  };
+  r.readAsText(f);
+};
+$("#wipeBtn").onclick=()=>{
+  if(confirm("本当にすべてのログを削除しますか？取り消せません。")){
+    entries=[]; save(entries); renderStoreInfo(); toast("全削除しました");
+  }
+};
+function renderStoreInfo(){
+  const bytes=new Blob([localStorage.getItem(KEY)||""]).size;
+  $("#storeInfo").textContent=`保存件数: ${entries.length}件 ／ 使用容量: 約${(bytes/1024).toFixed(1)}KB ／ 保存先: この端末のブラウザ内`;
+}
+
+/* ===== 初期化 ===== */
+resetForm(); renderTagSuggest(); renderTmplBar();
+</script>
