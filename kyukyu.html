@@ -139,6 +139,10 @@
   .block h3{font-size:.92rem;display:flex;align-items:center;gap:7px;margin-bottom:9px;padding-bottom:7px;border-bottom:1px dashed var(--line)}
   .block h3 .tag{font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.04em}
   .tag.killer{background:var(--red-bg);color:var(--red-ink)}
+  .chief-suggest{margin-top:10px;padding:10px 12px;border:1px dashed var(--red-ink,#c0392b);border-radius:10px;background:var(--red-bg,#fff5f5)}
+  .chief-suggest .cs-h{font-size:12px;color:var(--red-ink,#c0392b);margin-bottom:8px;line-height:1.5}
+  .chief-suggest .cs-dis{font-size:12.5px;color:var(--ink,#333);margin-top:8px;line-height:1.6}
+  .chief-suggest .cs-dis b{color:var(--red-ink,#c0392b)}
   .tag.obs{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent)}
   .tag.exam{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
 
@@ -320,6 +324,7 @@
         <textarea id="chief" style="min-height:52px" placeholder="例）30分前から急に胸が締め付けられる。冷や汗も出る。"></textarea>
       </div>
     </div>
+    <div id="chiefSuggest" class="chief-suggest" style="display:none"></div>
     <div class="row" style="margin-top:10px">
       <div class="fld" style="flex:0 0 150px">
         <label for="onset">発症時刻</label>
@@ -431,7 +436,7 @@ const SAMPLE=[
 ];
 const JCS_LABEL={"0":"清明(0)","1":"Ⅰ-1","2":"Ⅰ-2","3":"Ⅰ-3","10":"Ⅱ-10","20":"Ⅱ-20","30":"Ⅱ-30","100":"Ⅲ-100","200":"Ⅲ-200","300":"Ⅲ-300"};
 
-const state={age:"",sex:null,report:"",pmh:"",meds:"",allergy:"",notes:"",ecg:"",chief:"",onset:"",jcs:"",rr:"",spo2:"",hr:"",sbp:"",dbp:"",temp:"",bg:"",gcsE:"",gcsV:"",gcsM:"",pupL:"",pupR:"",pupReact:"",symptom:null,findings:{}};
+const state={age:"",sex:null,report:"",pmh:"",meds:"",allergy:"",notes:"",ecg:"",chief:"",onset:"",jcs:"",rr:"",spo2:"",hr:"",sbp:"",dbp:"",temp:"",bg:"",gcsE:"",gcsV:"",gcsM:"",pupL:"",pupR:"",pupReact:"",symptoms:[],findings:{}};
 
 const QUICK={
   pmh:["高血圧","糖尿病","脂質異常","心疾患","心房細動","脳卒中","喘息/COPD","腎不全(透析)","悪性腫瘍","認知症","手術歴","なし"],
@@ -485,11 +490,49 @@ function renderChips(){
   CHIP_ORDER.forEach(key=>{
     const s=SYMPTOMS[key]; const b=document.createElement("button");
     b.className="chip"; b.type="button";
-    b.setAttribute("aria-pressed", state.symptom===key?"true":"false");
+    b.setAttribute("aria-pressed", state.symptoms.includes(key)?"true":"false");
     b.innerHTML=`<span class="em">${s.em}</span>${s.name}`;
-    b.onclick=()=>{ state.symptom = state.symptom===key?null:key; save(); renderChips(); renderResult(); renderSummary(); };
+    b.onclick=()=>{ const i=state.symptoms.indexOf(key); if(i>=0)state.symptoms.splice(i,1); else state.symptoms.push(key); save(); renderChips(); renderResult(); renderSummary(); renderChiefSuggest(); };
     c.appendChild(b);
   });
+}
+const CHIEF_KEYWORDS={
+  chest:["胸","締め付け","圧迫感","心窩部","みぞおち","背中","背部","動悸"],
+  dyspnea:["息","呼吸","苦し","ぜーぜー","ゼーゼー","ヒューヒュー","喘鳴","むせ","息切れ"],
+  headache:["頭","こめかみ","後頭部"],
+  abd:["腹","お腹","おなか","胃","下腹","へそ","便","吐"],
+  consci:["意識","反応","もうろう","ぐったり","呼びかけ","ボーッ","ろれつ"],
+  syncope:["めまい","眩暈","ふらつき","立ちくらみ","失神","気を失","目の前が暗","くらっ"],
+  seizure:["けいれん","痙攣","ひきつけ","ひきつり","つっぱ"],
+  fever:["熱","悪寒","さむけ","寒気","発熱"],
+};
+function suggestFromChief(){
+  const t=(state.chief||""); if(!t.trim())return [];
+  const hits=[];
+  CHIP_ORDER.forEach(key=>{ if(CHIEF_KEYWORDS[key].some(w=>t.includes(w))) hits.push(key); });
+  return hits;
+}
+function renderChiefSuggest(){
+  const box=document.getElementById("chiefSuggest"); if(!box)return;
+  const hits=suggestFromChief();
+  if(!hits.length){ box.style.display="none"; box.innerHTML=""; return; }
+  box.style.display="block"; box.innerHTML="";
+  const h=document.createElement("div"); h.className="cs-h";
+  h.innerHTML="💡 訴えから想起される主訴と<b>疑い疾患</b>（キーワード判定・確定診断ではありません）。タップで主訴に追加";
+  box.appendChild(h);
+  const wrap=document.createElement("div"); wrap.className="chips";
+  hits.forEach(key=>{
+    const s=SYMPTOMS[key];
+    const b=document.createElement("button"); b.type="button"; b.className="chip";
+    b.setAttribute("aria-pressed", state.symptoms.includes(key)?"true":"false");
+    b.innerHTML=`<span class="em">${s.em}</span>${s.name}`;
+    b.onclick=()=>{ if(!state.symptoms.includes(key)){ state.symptoms.push(key); save(); renderChips(); renderResult(); renderSummary(); renderChiefSuggest(); } };
+    wrap.appendChild(b);
+  });
+  box.appendChild(wrap);
+  const dis=document.createElement("div"); dis.className="cs-dis";
+  dis.innerHTML=hits.map(key=>`<b>${SYMPTOMS[key].name}</b>：${SYMPTOMS[key].killer.join("・")}`).join("<br>");
+  box.appendChild(dis);
 }
 function computeVitalLevels(){
   const keys=["jcs","rr","spo2","hr","sbp","dbp","temp","bg"]; const res={}; let worst=0; let anyEntered=false; const flags=[];
@@ -525,7 +568,7 @@ function renderSummary(){
   if(gt!=null && gl==="red") flags.push("GCS "+gt+"(≤8)");
   if(si!=null && sl==="red") flags.push("SI "+si.toFixed(1)+"(≥1.0)");
   if(pa.lvl==="red") flags.push("瞳孔："+pa.text);
-  if(!anyEntered && !state.symptom){sum.style.display="none";return;}
+  if(!anyEntered && !state.symptoms.length){sum.style.display="none";return;}
   sum.style.display="block";
   let lvl="none",lbl="観察を継続";
   if(worst===3){lvl="red";lbl="高緊急の可能性";}
@@ -590,33 +633,38 @@ const SCOPE_SAMPLE="S_";
 
 function renderResult(){
   const r=document.getElementById("result");
-  if(!state.symptom){r.style.display="none"; r.innerHTML=""; return;}
-  const s=SYMPTOMS[state.symptom]; r.style.display="block";
-  const sec=document.createElement("section");
-  sec.innerHTML=`<div class="rtitle"><span class="em">${s.em}</span>${s.name}</div>`;
+  if(!state.symptoms.length){r.style.display="none"; r.innerHTML=""; return;}
+  r.style.display="block"; r.innerHTML="";
+  state.symptoms.forEach(key=>{
+    const s=SYMPTOMS[key];
+    const sec=document.createElement("section");
+    sec.innerHTML=`<div class="rtitle"><span class="em">${s.em}</span>${s.name}</div>`;
 
-  const b1=document.createElement("div"); b1.className="block";
-  b1.innerHTML=`<h3><span class="tag killer">見逃し厳禁</span>致死的疾患の想起</h3>`;
-  const kul=document.createElement("ul"); kul.className="k";
-  s.killer.forEach(k=>{const li=document.createElement("li");li.textContent=k;kul.appendChild(li);});
-  b1.appendChild(kul); sec.appendChild(b1);
+    const b1=document.createElement("div"); b1.className="block";
+    b1.innerHTML=`<h3><span class="tag killer">見逃し厳禁</span>致死的疾患の想起</h3>`;
+    const kul=document.createElement("ul"); kul.className="k";
+    s.killer.forEach(k=>{const li=document.createElement("li");li.textContent=k;kul.appendChild(li);});
+    b1.appendChild(kul); sec.appendChild(b1);
 
-  const rf=document.createElement("div"); rf.className="redflag";
-  rf.innerHTML=`<span>🚨</span><span>${s.red}</span>`; sec.appendChild(rf);
+    const rf=document.createElement("div"); rf.className="redflag";
+    rf.innerHTML=`<span>🚨</span><span>${s.red}</span>`; sec.appendChild(rf);
 
-  const b2=document.createElement("div"); b2.className="block";
-  b2.innerHTML=`<h3><span class="tag obs">問診</span>追加で確認（OPQRST）</h3>`;
-  b2.appendChild(makeFindingList(scopeObs(state.symptom),s.obs)); sec.appendChild(b2);
+    const b2=document.createElement("div"); b2.className="block";
+    b2.innerHTML=`<h3><span class="tag obs">問診</span>追加で確認（OPQRST）</h3>`;
+    b2.appendChild(makeFindingList(scopeObs(key),s.obs)); sec.appendChild(b2);
 
-  const b3=document.createElement("div"); b3.className="block";
-  b3.innerHTML=`<h3><span class="tag exam">身体所見</span>とるべき所見</h3>`;
-  b3.appendChild(makeFindingList(scopeExam(state.symptom),s.exam)); sec.appendChild(b3);
+    const b3=document.createElement("div"); b3.className="block";
+    b3.innerHTML=`<h3><span class="tag exam">身体所見</span>とるべき所見</h3>`;
+    b3.appendChild(makeFindingList(scopeExam(key),s.exam)); sec.appendChild(b3);
 
+    r.appendChild(sec);
+  });
+
+  const sec4=document.createElement("section");
   const b4=document.createElement("div"); b4.className="block";
   b4.innerHTML=`<h3><span class="tag exam">聴取</span>SAMPLE 病歴</h3>`;
-  b4.appendChild(makeFindingList(SCOPE_SAMPLE,SAMPLE)); sec.appendChild(b4);
-
-  r.innerHTML=""; r.appendChild(sec);
+  b4.appendChild(makeFindingList(SCOPE_SAMPLE,SAMPLE)); sec4.appendChild(b4);
+  r.appendChild(sec4);
 }
 
 /* ---- 申し送りテキスト ---- */
@@ -644,9 +692,9 @@ function buildReportText(){
   if(state.meds.trim())L.push("■内服薬："+state.meds.trim());
   if(state.allergy.trim())L.push("■アレルギー："+state.allergy.trim());
   if(state.notes.trim())L.push("■特記："+state.notes.trim());
-  if(state.symptom||state.chief.trim()||state.onset){
+  if(state.symptoms.length||state.chief.trim()||state.onset){
     const parts=[];
-    if(state.symptom)parts.push(SYMPTOMS[state.symptom].name);
+    state.symptoms.forEach(k=>parts.push(SYMPTOMS[k].name));
     if(state.onset)parts.push("発症"+state.onset);
     L.push("■主訴："+(parts.join(" / ")||"—"));
     if(state.chief.trim())L.push("  本人の訴え：「"+state.chief.trim()+"」");
@@ -685,15 +733,16 @@ function buildReportText(){
     L.push(p.trim());
   }
   if(state.ecg.trim())L.push("■心電図(12誘導)："+state.ecg.trim());
-  if(state.symptom){
-    const s=SYMPTOMS[state.symptom];
-    const ol=findingLines(scopeObs(state.symptom),s.obs);
-    if(ol.length){L.push("■観察(OPQRST)：");L.push(...ol);}
-    const el=findingLines(scopeExam(state.symptom),s.exam);
-    if(el.length){L.push("■身体所見：");L.push(...el);}
-    const sl=findingLines(SCOPE_SAMPLE,SAMPLE);
-    if(sl.length){L.push("■SAMPLE：");L.push(...sl);}
-  }
+  const multi=state.symptoms.length>1;
+  state.symptoms.forEach(k=>{
+    const s=SYMPTOMS[k]; const tag=multi?"["+s.name+"]":"";
+    const ol=findingLines(scopeObs(k),s.obs);
+    if(ol.length){L.push("■観察(OPQRST)"+tag+"：");L.push(...ol);}
+    const el=findingLines(scopeExam(k),s.exam);
+    if(el.length){L.push("■身体所見"+tag+"：");L.push(...el);}
+  });
+  const smpl=findingLines(SCOPE_SAMPLE,SAMPLE);
+  if(smpl.length){L.push("■SAMPLE：");L.push(...smpl);}
   L.push("―――");
   L.push("※本メモは観察支援用であり診断ではありません。");
   return L.join("\n");
@@ -710,6 +759,7 @@ function bindVital(id){
 }
 ["jcs","rr","spo2","hr","sbp","dbp","temp","bg"].forEach(bindVital);
 ["report","chief","onset","pmh","meds","allergy","notes","ecg"].forEach(bindText);
+document.getElementById("chief").addEventListener("input", renderChiefSuggest);
 
 ["gcsE","gcsV","gcsM","pupL","pupR","pupReact"].forEach(id=>{
   const el=document.getElementById(id); if(!el)return;
@@ -797,7 +847,8 @@ document.getElementById("resetBtn").addEventListener("click",()=>{
 
 /* ---- 永続化 ---- */
 function save(){try{localStorage.setItem("kky_state",JSON.stringify(state));}catch(e){}}
-function load(){try{const raw=localStorage.getItem("kky_state");if(raw)Object.assign(state,JSON.parse(raw));}catch(e){}}
+function migrateSymptoms(st){ if(!Array.isArray(st.symptoms)) st.symptoms = st.symptom ? [st.symptom] : []; delete st.symptom; }
+function load(){try{const raw=localStorage.getItem("kky_state");if(raw)Object.assign(state,JSON.parse(raw));}catch(e){} migrateSymptoms(state);}
 
 /* ---- 初期化 ---- */
 load();
@@ -805,7 +856,7 @@ load();
 ageEl.value=state.age??"";
 if(state.sex)document.querySelectorAll("#sex button").forEach(x=>x.setAttribute("aria-pressed",state.sex===x.dataset.v?"true":"false"));
 ageNote();
-renderChips(); renderVitals(); renderDerived(); renderSummary(); renderResult();
+renderChips(); renderVitals(); renderDerived(); renderSummary(); renderResult(); renderChiefSuggest();
 renderQuick(); ["pmh","meds","allergy","ecg"].forEach(updateChipStates);
 
 /* ==== 記録履歴・マイテンプレ・データ書出/読込（既存stateとは別キーで保存） ==== */
@@ -818,8 +869,8 @@ const saveH=()=>{try{localStorage.setItem(HKEY,JSON.stringify(history));}catch(e
 const saveT=()=>{try{localStorage.setItem(TKEY,JSON.stringify(tmpls));}catch(e){}};
 
 function caseIsEmpty(){
-  const keys=["age","sex","report","pmh","meds","allergy","notes","ecg","chief","onset","jcs","rr","spo2","hr","sbp","dbp","temp","bg","gcsE","gcsV","gcsM","pupL","pupR","pupReact","symptom"];
-  const anyField=keys.some(k=>state[k]!=="" && state[k]!=null);
+  const keys=["age","sex","report","pmh","meds","allergy","notes","ecg","chief","onset","jcs","rr","spo2","hr","sbp","dbp","temp","bg","gcsE","gcsV","gcsM","pupL","pupR","pupReact"];
+  const anyField=keys.some(k=>state[k]!=="" && state[k]!=null) || (state.symptoms&&state.symptoms.length>0);
   const anyFinding=Object.values(state.findings||{}).some(f=>f&&(f.s||f.m));
   return !anyField && !anyFinding;
 }
@@ -831,7 +882,7 @@ function fmtTs(ts){ const d=new Date(ts); const p=n=>String(n).padStart(2,"0");
 document.getElementById("saveCaseBtn").addEventListener("click",()=>{
   if(caseIsEmpty()){ toast("入力がありません"); return; }
   const snap=JSON.parse(JSON.stringify(state));
-  const title=SYMPTOMS[state.symptom]?.name || (state.chief||"").slice(0,12) || "症例";
+  const title=(state.symptoms&&state.symptoms.length?state.symptoms.map(k=>SYMPTOMS[k].name).join("・"):"") || (state.chief||"").slice(0,12) || "症例";
   const who=[state.age!==""?state.age+"歳":"", state.sex?state.sex+"性":""].filter(Boolean).join(" ");
   history.unshift({ id:uid(), ts:Date.now(), title, who, state:snap, summary:buildReportText() });
   saveH(); renderHistory(); toast("記録に保存しました ✓");

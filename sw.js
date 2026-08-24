@@ -1,6 +1,6 @@
 /* 救急観察支援メモ — オフライン用 Service Worker
    アプリ本体をキャッシュし、圏外でも起動できるようにする。 */
-const CACHE = "kyukyu-v1";
+const CACHE = "kyukyu-v2";
 const ASSETS = [
   "kyukyu.html",
   "manifest.webmanifest",
