@@ -154,6 +154,21 @@
       <div class="checks" id="checkList"></div>
     </div>
 
+    <div style="margin-top:14px">
+      <label class="fld">今日の運動（Apple Watchの記録を転記）</label>
+      <div class="chips" id="wkChips" style="flex-wrap:wrap"></div>
+      <div class="grid2" style="margin-top:8px">
+        <div>
+          <label class="fld">時間（分・任意）</label>
+          <input type="number" inputmode="numeric" id="inWkMin" placeholder="例 45">
+        </div>
+        <div>
+          <label class="fld">消費kcal（任意）</label>
+          <input type="number" inputmode="numeric" id="inWkKcal" placeholder="例 320">
+        </div>
+      </div>
+    </div>
+
     <div class="grid2" style="margin-top:12px">
       <div>
         <label class="fld">歩数（任意）</label>
@@ -433,26 +448,47 @@ const CHECKS={
   ],
 };
 
+/* ===== 運動の種類 ===== */
+const WK_TYPES=[['筋トレ','🏋️'],['ウォーキング','🚶'],['ランニング','🏃'],['自転車','🚴'],['水泳','🏊'],['その他','🤸']];
+const WK_ICON={};WK_TYPES.forEach(([t,i])=>WK_ICON[t]=i);
+
 /* ===== 現在の編集対象 ===== */
-let cur={date:todayStr(),day:'非番',checks:{}};
+let cur={date:todayStr(),day:'非番',checks:{},wk:{types:[]}};
+
+function renderWkChips(){
+  const el=document.getElementById('wkChips'); el.innerHTML='';
+  WK_TYPES.forEach(([t,ic])=>{
+    const on=cur.wk.types.includes(t);
+    const c=document.createElement('div');
+    c.className='chip'+(on?' on':''); c.style.minWidth='84px'; c.style.flex='0 0 auto';
+    c.textContent=ic+' '+t;
+    c.onclick=()=>{const i=cur.wk.types.indexOf(t);i>=0?cur.wk.types.splice(i,1):cur.wk.types.push(t);renderWkChips();};
+    el.appendChild(c);
+  });
+}
 
 function loadDateIntoForm(){
   const d=cur.date; const rec=store.days[d];
   document.getElementById('inDate').value=d;
   if(rec){
     cur.day=rec.day||'非番'; cur.checks=Object.assign({},rec.checks||{});
+    cur.wk={types:(rec.workout&&rec.workout.types)?rec.workout.types.slice():[]};
     document.getElementById('inWt').value=rec.wt??'';
+    document.getElementById('inWkMin').value=(rec.workout&&rec.workout.min)||'';
+    document.getElementById('inWkKcal').value=(rec.workout&&rec.workout.kcal)||'';
     document.getElementById('inSteps').value=rec.steps??'';
     document.getElementById('inSleep').value=rec.sleep??'';
     document.getElementById('inMemo').value=rec.memo??'';
   }else{
-    cur.checks={};
+    cur.checks={}; cur.wk={types:[]};
     document.getElementById('inWt').value='';
+    document.getElementById('inWkMin').value='';
+    document.getElementById('inWkKcal').value='';
     document.getElementById('inSteps').value='';
     document.getElementById('inSleep').value='';
     document.getElementById('inMemo').value='';
   }
-  renderDayChips(); renderChecks();
+  renderDayChips(); renderChecks(); renderWkChips();
 }
 
 function setDay(d){ cur.day=d; if(!store.days[cur.date]) cur.checks={}; renderDayChips(); renderChecks(); }
@@ -480,10 +516,14 @@ function saveDay(){
   const steps=parseInt(document.getElementById('inSteps').value)||null;
   const sleep=parseFloat(document.getElementById('inSleep').value)||null;
   const memo=document.getElementById('inMemo').value.trim();
-  if(isNaN(wt) && Object.keys(cur.checks).filter(k=>cur.checks[k]).length===0 && !memo){
+  const wkMin=parseInt(document.getElementById('inWkMin').value)||null;
+  const wkKcal=parseInt(document.getElementById('inWkKcal').value)||null;
+  const workout={types:cur.wk.types.slice(),min:wkMin,kcal:wkKcal};
+  const hasWk=workout.types.length||wkMin||wkKcal;
+  if(isNaN(wt) && Object.keys(cur.checks).filter(k=>cur.checks[k]).length===0 && !memo && !hasWk){
     toast('体重かチェックを入れてください'); return;
   }
-  store.days[cur.date]={wt:isNaN(wt)?null:wt,day:cur.day,checks:cur.checks,steps,sleep,memo};
+  store.days[cur.date]={wt:isNaN(wt)?null:wt,day:cur.day,checks:cur.checks,workout,steps,sleep,memo};
   save(); toast('保存しました ✓'); renderAll();
 }
 
@@ -498,6 +538,10 @@ function renderHist(){
     const r=store.days[k];
     const done=Object.keys(r.checks||{}).filter(x=>r.checks[x]).length;
     const total=(CHECKS[r.day]||[]).length;
+    const wk=r.workout; let wkStr='';
+    if(wk&&(wk.types&&wk.types.length||wk.min)){
+      wkStr='　'+(wk.types||[]).map(t=>WK_ICON[t]||'').join('')+(wk.min?wk.min+'分':'');
+    }
     const row=document.createElement('div');
     row.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)';
     row.innerHTML=
@@ -506,6 +550,7 @@ function renderHist(){
       '<b style="width:58px;color:var(--ink)">'+(r.wt!=null?r.wt.toFixed(1)+'<small style=\"font-weight:400;color:var(--sub)\">kg</small>':'—')+'</b>'+
       '<span style="flex:1;font-size:12px;color:var(--sub)">'+
         (total?('✓'+done+'/'+total):'')+
+        wkStr+
         (r.steps?'　'+r.steps.toLocaleString()+'歩':'')+'</span>'+
       '<button class="lnk" data-k="'+k+'">編集</button>';
     row.querySelector('.lnk').onclick=()=>{cur.date=k;loadDateIntoForm();window.scrollTo({top:0,behavior:'smooth'});};
