@@ -214,41 +214,28 @@
     </p>
   </div>
 
+  <div class="card" style="padding:12px 15px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13.5px;font-weight:700">📅 <span id="tickDateMeal">今日</span> の食事チェック</span>
+      <button class="lnk" onclick="tab('log')">日付を変える</button>
+    </div>
+    <p class="muted" style="margin:6px 0 0;font-size:11.5px">タップで記録。選んだ日付に自動保存されます。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="ic">✅</span>今日の食事ルール</h2>
+    <div class="checks" id="mealRules"></div>
+  </div>
+
   <div class="card">
     <h2><span class="ic">🏠</span>非番・休みの献立（自炊・ここが勝負）</h2>
-    <div class="meal">
-      <b>朝</b> <span class="tag t">P 35g</span>
-      <ul><li>卵2〜3個＋納豆＋ごはん軽め（120g）</li>
-      <li>または オートミール40g＋プロテイン＋ヨーグルト</li></ul>
-    </div>
-    <div class="meal">
-      <b>昼</b> <span class="tag t">P 40g</span>
-      <ul><li>鶏むね or 魚（鮭・さば）＋野菜たっぷり＋ごはん普通（150g）</li>
-      <li>作り置きの「サラダチキン・ゆで卵・味噌汁」で時短</li></ul>
-    </div>
-    <div class="meal">
-      <b>夜</b> <span class="tag t">P 45g・糖質控えめ</span>
-      <ul><li>高タンパク低脂質（鶏むね・ささみ・白身魚・豆腐・卵）</li>
-      <li>ごはんは少なめ or 抜き、野菜と汁物で満腹に</li>
-      <li>20時以降はできるだけ食べない</li></ul>
-    </div>
+    <div id="menuHome"></div>
     <div class="note">💡 <b>作り置きのコツ</b>：非番の朝にまとめて「サラダチキン・ゆで卵6個・味噌汁・きんぴら」を作ると、次の当直の昼や忙しい日がラクになります。</div>
   </div>
 
   <div class="card">
     <h2><span class="ic">🚒</span>当直日の食べ方（夜は後輩まかせでOK）</h2>
-    <div class="meal amber">
-      <b>朝・昼で貯金する</b> <span class="tag a">コントロール可</span>
-      <ul><li>朝：プロテイン＋おにぎり1個＋ゆで卵</li>
-      <li>昼：サラダチキン＋おにぎり1個（揚げ物は避ける）</li>
-      <li>甘い飲料をやめて水・お茶・ブラックに</li></ul>
-    </div>
-    <div class="meal amber">
-      <b>夜（後輩の手料理）は楽しむ。ただし3つだけ意識</b>
-      <ul><li>① <b>野菜・汁物から先に</b>食べる（早食い防止）</li>
-      <li>② <b>ごはんのおかわりはしない</b></li>
-      <li>③ 揚げ物は1個減らす・夜食/締めのカップ麺はパス</li></ul>
-    </div>
+    <div id="menuDuty"></div>
     <div class="note">🍚 当直の夜は「管理しない日」と割り切ってOK。翌日の<b>非番でしっかり整えれば週トータルで必ず赤字</b>になります。罪悪感より継続。</div>
   </div>
 
@@ -325,18 +312,23 @@
       <tr style="border-top:1px solid var(--line)"><td style="padding:7px 0"><b>非番②</b></td><td>C：上半身プル＋体幹</td></tr>
     </table>
     <p class="muted" style="margin:9px 0 0">※順番はサイクル次第で前後OK。各25〜35分。フォーム優先、限界の1〜2回手前で止める。</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)">
+      <span style="font-size:13px;font-weight:700">📅 <span id="tickDateTrain">今日</span> のトレ記録</span>
+      <button class="lnk" onclick="tab('log')">日付を変える</button>
+    </div>
+    <p class="muted" style="margin:6px 0 0;font-size:11.5px">やった種目をタップ。選んだ日付に自動保存されます。</p>
   </div>
 
   <div class="card">
-    <h2><span class="ic">🅰️</span>A：上半身プッシュ</h2>
+    <h2><span class="ic">🅰️</span>A：上半身プッシュ <span id="cntA" class="pill" style="background:var(--teal-l);color:var(--teal-d)"></span></h2>
     <div id="menuA"></div>
   </div>
   <div class="card">
-    <h2><span class="ic">🅱️</span>B：下半身</h2>
+    <h2><span class="ic">🅱️</span>B：下半身 <span id="cntB" class="pill" style="background:var(--teal-l);color:var(--teal-d)"></span></h2>
     <div id="menuB"></div>
   </div>
   <div class="card">
-    <h2><span class="ic">🅲</span>C：上半身プル＋体幹</h2>
+    <h2><span class="ic">🅲</span>C：上半身プル＋体幹 <span id="cntC" class="pill" style="background:var(--teal-l);color:var(--teal-d)"></span></h2>
     <div id="menuC"></div>
   </div>
 
@@ -453,7 +445,69 @@ const WK_TYPES=[['筋トレ','🏋️'],['ウォーキング','🚶'],['ラン�
 const WK_ICON={};WK_TYPES.forEach(([t,i])=>WK_ICON[t]=i);
 
 /* ===== 現在の編集対象 ===== */
-let cur={date:todayStr(),day:'非番',checks:{},wk:{types:[]}};
+let cur={date:todayStr(),day:'非番',checks:{},wk:{types:[]},ticks:{}};
+
+/* ===== 日付連動チェック（食事メニュー・トレ種目） ===== */
+function isTick(key){return !!(cur.ticks&&cur.ticks[key]);}
+function persistTicks(){
+  const ex=store.days[cur.date]||{day:cur.day,checks:{}};
+  ex.ticks=Object.assign({},cur.ticks);
+  if(!ex.day)ex.day=cur.day;
+  store.days[cur.date]=ex; save();
+}
+function toggleTick(key){
+  if(!cur.ticks)cur.ticks={};
+  if(cur.ticks[key])delete cur.ticks[key];else cur.ticks[key]=true;
+  persistTicks(); renderMeal(); renderMenus(); renderHist();
+}
+/* クリック委譲：data-key付きチェックのみ */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('.ck[data-key]'); if(!el)return; toggleTick(el.dataset.key);
+});
+function tickRow(key,text,sub,small){
+  const on=isTick(key);
+  const bx=small?' style="width:22px;height:22px"':'';
+  const pd=small?' style="padding:8px 4px"':'';
+  return '<div class="ck'+(on?' on':'')+'" data-key="'+key+'"'+pd+'><div class="box"'+bx+'>'+(on?'✓':'')+'</div><div class="tx">'+text+(sub?'<small>'+sub+'</small>':'')+'</div></div>';
+}
+
+/* ===== 食事メニュー（チェック式） ===== */
+const MEAL={
+  home:[
+    {h:'朝',tag:'P35g',items:['卵2〜3個＋納豆＋ごはん軽め(120g)','またはオートミール40g＋プロテイン＋ヨーグルト']},
+    {h:'昼',tag:'P40g',items:['鶏むね/魚(鮭・さば)＋野菜たっぷり＋ごはん(150g)','作り置き(サラダチキン・ゆで卵・味噌汁)で時短']},
+    {h:'夜',tag:'P45g・糖質控えめ',items:['高タンパク低脂質(鶏むね・ささみ・白身魚・豆腐・卵)','ごはんは少なめor抜き、野菜と汁物で満腹に','20時以降はできるだけ食べない']},
+  ],
+  duty:[
+    {h:'朝・昼で貯金',tag:'コントロール可',items:['朝：プロテイン＋おにぎり1個＋ゆで卵','昼：サラダチキン＋おにぎり1個(揚げ物は避ける)','甘い飲料をやめて水・お茶・ブラックに']},
+    {h:'夜(後輩の料理)の3つ',tag:'これだけ意識',items:['野菜・汁物から先に食べる','ごはんのおかわりはしない','揚げ物は1個減らす・締めのカップ麺はパス']},
+  ],
+};
+const MEAL_RULES=[
+  ['r_p','タンパク質140g（最低120g）に届いた'],
+  ['r_drink','甘い飲料をとらなかった'],
+  ['r_sweet','お菓子を毎日は食べていない'],
+  ['r_veg','野菜・汁物から食べた'],
+  ['r_night','夜食をしなかった'],
+  ['r_alc','休肝日／飲み過ぎなし'],
+];
+function renderMenuBlock(elId,data,prefix){
+  const el=document.getElementById(elId); if(!el)return; el.innerHTML='';
+  data.forEach((g,gi)=>{
+    const amber=(data===MEAL.duty);
+    const w=document.createElement('div'); w.className='meal'+(amber?' amber':'');
+    let h='<b>'+g.h+'</b>'+(g.tag?' <span class="tag '+(amber?'a':'t')+'">'+g.tag+'</span>':'');
+    h+='<div class="checks" style="margin-top:2px">';
+    g.items.forEach((it,ii)=>{h+=tickRow(prefix+gi+'_'+ii,it,'',true);});
+    h+='</div>'; w.innerHTML=h; el.appendChild(w);
+  });
+}
+function renderMeal(){
+  renderMenuBlock('menuHome',MEAL.home,'mh');
+  renderMenuBlock('menuDuty',MEAL.duty,'md');
+  const el=document.getElementById('mealRules');
+  if(el){el.innerHTML=MEAL_RULES.map(([k,t])=>tickRow(k,t,'')).join('');}
+}
 
 function renderWkChips(){
   const el=document.getElementById('wkChips'); el.innerHTML='';
@@ -472,6 +526,7 @@ function loadDateIntoForm(){
   document.getElementById('inDate').value=d;
   if(rec){
     cur.day=rec.day||'非番'; cur.checks=Object.assign({},rec.checks||{});
+    cur.ticks=Object.assign({},rec.ticks||{});
     cur.wk={types:(rec.workout&&rec.workout.types)?rec.workout.types.slice():[]};
     document.getElementById('inWt').value=rec.wt??'';
     document.getElementById('inWkMin').value=(rec.workout&&rec.workout.min)||'';
@@ -480,7 +535,7 @@ function loadDateIntoForm(){
     document.getElementById('inSleep').value=rec.sleep??'';
     document.getElementById('inMemo').value=rec.memo??'';
   }else{
-    cur.checks={}; cur.wk={types:[]};
+    cur.checks={}; cur.wk={types:[]}; cur.ticks={};
     document.getElementById('inWt').value='';
     document.getElementById('inWkMin').value='';
     document.getElementById('inWkKcal').value='';
@@ -488,7 +543,10 @@ function loadDateIntoForm(){
     document.getElementById('inSleep').value='';
     document.getElementById('inMemo').value='';
   }
-  renderDayChips(); renderChecks(); renderWkChips();
+  const lab=(cur.date===todayStr()?'今日':fmt(cur.date));
+  const mD=document.getElementById('tickDateMeal'); if(mD)mD.textContent=lab;
+  const tD=document.getElementById('tickDateTrain'); if(tD)tD.textContent=lab;
+  renderDayChips(); renderChecks(); renderWkChips(); renderMeal(); renderMenus();
 }
 
 function setDay(d){ cur.day=d; if(!store.days[cur.date]) cur.checks={}; renderDayChips(); renderChecks(); }
@@ -523,7 +581,7 @@ function saveDay(){
   if(isNaN(wt) && Object.keys(cur.checks).filter(k=>cur.checks[k]).length===0 && !memo && !hasWk){
     toast('体重かチェックを入れてください'); return;
   }
-  store.days[cur.date]={wt:isNaN(wt)?null:wt,day:cur.day,checks:cur.checks,workout,steps,sleep,memo};
+  store.days[cur.date]={wt:isNaN(wt)?null:wt,day:cur.day,checks:cur.checks,ticks:Object.assign({},cur.ticks),workout,steps,sleep,memo};
   save(); toast('保存しました ✓'); renderAll();
 }
 
@@ -662,12 +720,19 @@ const MENUS={
 };
 function renderMenus(){
   for(const k of ['A','B','C']){
-    const el=document.getElementById('menu'+k); el.innerHTML='';
-    MENUS[k].forEach(([nm,desc,set])=>{
-      const d=document.createElement('div');d.className='ex';
-      d.innerHTML='<div class="nm">'+nm+'<small>'+desc+'</small></div><div class="set">'+set+'</div>';
+    const el=document.getElementById('menu'+k); if(!el)continue; el.innerHTML='';
+    let done=0;
+    MENUS[k].forEach(([nm,desc,set],idx)=>{
+      const key='w'+k+idx; const on=isTick(key); if(on)done++;
+      const d=document.createElement('div');d.className='ck'+(on?' on':'');d.dataset.key=key;
+      d.innerHTML='<div class="box">'+(on?'✓':'')+'</div>'+
+        '<div class="tx" style="display:flex;justify-content:space-between;gap:8px;align-items:center">'+
+        '<span>'+nm+'<small>'+desc+'</small></span>'+
+        '<span class="set" style="flex:none">'+set+'</span></div>';
       el.appendChild(d);
     });
+    const cnt=document.getElementById('cnt'+k);
+    if(cnt)cnt.textContent=done+'/'+MENUS[k].length+(done===MENUS[k].length?' 完了🎉':'');
   }
 }
 
