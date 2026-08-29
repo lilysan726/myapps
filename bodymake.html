@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f766e">
+<title>ボディメイク 80→65kg</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#ffffff; --ink:#1a2b32; --sub:#5c7079;
+    --line:#e2e8ec; --teal:#0f766e; --teal-d:#0b5c56; --teal-l:#e6f4f2;
+    --amber:#c2791b; --amber-l:#fdf1de; --red:#c14b4b; --green:#2e9e6b;
+    --blue:#2b6cb0; --blue-l:#e7f0fa; --shadow:0 1px 3px rgba(20,40,50,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0e1618; --card:#16232699; --ink:#e6eef0; --sub:#9fb3ba;
+      --line:#26383d; --teal:#2dd4bf; --teal-d:#14b8a6; --teal-l:#12312f;
+      --amber:#e0a75a; --amber-l:#2e2415; --red:#e07a7a; --green:#4cc98a;
+      --blue:#6fb0e8; --blue-l:#14252f; --shadow:0 1px 3px rgba(0,0,0,.3);
+    }
+    body{background:#0e1618;}
+    .card{background:#162326;}
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    font-size:15px; line-height:1.6; padding-bottom:78px;
+    max-width:560px; margin:0 auto;
+  }
+  header{
+    background:linear-gradient(135deg,var(--teal),var(--teal-d));
+    color:#fff; padding:16px 18px 14px; position:sticky; top:0; z-index:20;
+  }
+  header h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.02em;}
+  header .stat{display:flex;gap:14px;margin-top:10px;align-items:flex-end;}
+  header .stat b{font-size:26px;line-height:1;font-weight:800;}
+  header .stat .u{font-size:12px;opacity:.85;margin-left:2px;}
+  header .stat .sep{width:1px;background:rgba(255,255,255,.3);align-self:stretch;}
+  header .stat .lab{font-size:11px;opacity:.85;display:block;margin-bottom:3px;}
+  .prog{margin-top:12px;background:rgba(255,255,255,.22);border-radius:20px;height:9px;overflow:hidden;}
+  .prog > i{display:block;height:100%;background:#fff;border-radius:20px;transition:width .5s;}
+  .prog-lab{font-size:11px;opacity:.9;margin-top:5px;display:flex;justify-content:space-between;}
+  main{padding:14px 14px 0;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:13px;box-shadow:var(--shadow);}
+  .card h2{margin:0 0 10px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px;}
+  .card h2 .ic{font-size:16px;}
+  .muted{color:var(--sub);font-size:12.5px;}
+  .row{display:flex;gap:8px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  label.fld{display:block;font-size:12px;color:var(--sub);margin:0 0 4px;font-weight:600;}
+  input,select,textarea{
+    width:100%;font-size:16px;font-family:inherit;color:var(--ink);
+    background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;
+  }
+  input:focus,select,textarea:focus{outline:2px solid var(--teal-l);border-color:var(--teal);}
+  button{font-family:inherit;cursor:pointer;border:none;}
+  .btn{background:var(--teal);color:#fff;font-weight:700;font-size:15px;border-radius:11px;padding:11px 14px;width:100%;}
+  .btn:active{background:var(--teal-d);}
+  .btn.sec{background:var(--teal-l);color:var(--teal-d);}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;}
+  .chip{flex:1;min-width:62px;text-align:center;padding:9px 6px;border-radius:11px;border:1.5px solid var(--line);background:var(--card);font-size:13px;font-weight:600;color:var(--sub);}
+  .chip.on{border-color:var(--teal);background:var(--teal-l);color:var(--teal-d);}
+  .chip.on.amber{border-color:var(--amber);background:var(--amber-l);color:var(--amber);}
+  .chip.on.blue{border-color:var(--blue);background:var(--blue-l);color:var(--blue);}
+  .checks{display:flex;flex-direction:column;gap:2px;}
+  .ck{display:flex;align-items:center;gap:11px;padding:11px 6px;border-bottom:1px solid var(--line);cursor:pointer;}
+  .ck:last-child{border-bottom:none;}
+  .ck .box{width:24px;height:24px;border-radius:7px;border:2px solid var(--line);flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;transition:.15s;}
+  .ck.on .box{background:var(--green);border-color:var(--green);}
+  .ck .tx{flex:1;font-size:14px;}
+  .ck .tx small{display:block;color:var(--sub);font-size:11.5px;font-weight:400;}
+  .ck.on .tx{font-weight:600;}
+  canvas{width:100%;height:180px;display:block;}
+  nav{
+    position:fixed;bottom:0;left:0;right:0;max-width:560px;margin:0 auto;
+    background:var(--card);border-top:1px solid var(--line);
+    display:flex;z-index:30;padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav button{flex:1;background:none;padding:9px 0 8px;color:var(--sub);font-size:10.5px;display:flex;flex-direction:column;align-items:center;gap:3px;}
+  nav button .ni{font-size:20px;line-height:1;}
+  nav button.on{color:var(--teal);}
+  .tab{display:none;}
+  .tab.on{display:block;}
+  .meal{border-left:3px solid var(--teal);padding:2px 0 2px 11px;margin-bottom:12px;}
+  .meal.amber{border-color:var(--amber);}
+  .meal b{font-size:13.5px;}
+  .meal ul{margin:5px 0 0;padding-left:17px;}
+  .meal li{font-size:13px;margin-bottom:2px;}
+  .tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle;}
+  .tag.t{background:var(--teal-l);color:var(--teal-d);}
+  .tag.a{background:var(--amber-l);color:var(--amber);}
+  .ex{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);}
+  .ex:last-child{border-bottom:none;}
+  .ex .nm{font-size:13.5px;font-weight:600;}
+  .ex .nm small{display:block;font-weight:400;color:var(--sub);font-size:11.5px;}
+  .ex .set{font-size:12.5px;color:var(--teal-d);font-weight:700;white-space:nowrap;text-align:right;}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--amber-l);color:var(--amber);}
+  .kpi{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;}
+  .kpi > div{background:var(--bg);border-radius:12px;padding:10px 4px;}
+  .kpi b{display:block;font-size:20px;font-weight:800;color:var(--teal-d);}
+  .kpi span{font-size:10.5px;color:var(--sub);}
+  .note{background:var(--amber-l);border-radius:11px;padding:10px 12px;font-size:12.5px;color:var(--ink);}
+  .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 18px;border-radius:22px;font-size:13px;font-weight:600;opacity:0;transition:.3s;z-index:50;pointer-events:none;}
+  .toast.show{opacity:1;}
+  details{border:1px solid var(--line);border-radius:11px;padding:2px 12px;margin-bottom:9px;}
+  summary{padding:9px 0;font-weight:600;font-size:13.5px;cursor:pointer;}
+  details p,details ul{font-size:13px;}
+  .lnk{color:var(--teal-d);font-weight:600;background:none;padding:0;text-decoration:underline;font-size:12.5px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>💪 ボディメイク　80 → 65kg</h1>
+  <div class="stat">
+    <div><span class="lab">現在</span><b id="hCur">80.0</b><span class="u">kg</span></div>
+    <div class="sep"></div>
+    <div><span class="lab">残り</span><b id="hLeft">15.0</b><span class="u">kg</span></div>
+    <div class="sep"></div>
+    <div><span class="lab">達成予測</span><b id="hEta" style="font-size:16px">—</b></div>
+  </div>
+  <div class="prog"><i id="hBar" style="width:0%"></i></div>
+  <div class="prog-lab"><span>80kg</span><span id="hPct">0%</span><span>65kg</span></div>
+</header>
+
+<main>
+
+<!-- ========== 記録タブ ========== -->
+<section class="tab on" id="tab-log">
+  <div class="card">
+    <h2><span class="ic">📝</span>今日の記録</h2>
+    <div class="grid2">
+      <div>
+        <label class="fld">日付</label>
+        <input type="date" id="inDate">
+      </div>
+      <div>
+        <label class="fld">体重 (kg)</label>
+        <input type="number" step="0.1" inputmode="decimal" id="inWt" placeholder="例 79.4">
+      </div>
+    </div>
+    <label class="fld" style="margin-top:10px">今日はどの日？</label>
+    <div class="chips" id="dayChips">
+      <div class="chip" data-day="当直" onclick="setDay('当直')">🚒 当直日</div>
+      <div class="chip" data-day="非番" onclick="setDay('非番')">🏠 非番</div>
+      <div class="chip" data-day="休み" onclick="setDay('休み')">☀️ 休み</div>
+    </div>
+
+    <div id="checkWrap" style="margin-top:14px">
+      <label class="fld">今日のチェック</label>
+      <div class="checks" id="checkList"></div>
+    </div>
+
+    <div class="grid2" style="margin-top:12px">
+      <div>
+        <label class="fld">歩数（任意）</label>
+        <input type="number" inputmode="numeric" id="inSteps" placeholder="例 8500">
+      </div>
+      <div>
+        <label class="fld">睡眠 時間（任意）</label>
+        <input type="number" step="0.5" inputmode="decimal" id="inSleep" placeholder="例 6.5">
+      </div>
+    </div>
+    <label class="fld" style="margin-top:10px">ひとことメモ（任意）</label>
+    <input type="text" id="inMemo" placeholder="体調・食べ過ぎ・気づきなど">
+
+    <button class="btn" style="margin-top:14px" onclick="saveDay()">この日を保存</button>
+  </div>
+
+  <div class="card">
+    <h2><span class="ic">📉</span>体重の推移</h2>
+    <canvas id="chart"></canvas>
+    <div class="muted" style="text-align:center;margin-top:6px">
+      <span style="color:var(--teal-d)">●</span> 実測
+      <span style="color:var(--amber)">– –</span> 目標ライン（週-0.55kg）
+    </div>
+  </div>
+
+  <div class="card" id="histCard">
+    <h2><span class="ic">🗒️</span>記録の履歴</h2>
+    <div id="histList" class="muted">まだ記録がありません。</div>
+  </div>
+</section>
+
+<!-- ========== 食事タブ ========== -->
+<section class="tab" id="tab-meal">
+  <div class="card">
+    <h2><span class="ic">🍽️</span>1日の目安</h2>
+    <div class="kpi">
+      <div><b>~2000</b><span>kcal/日</span></div>
+      <div><b>140<span style="font-size:12px">g</span></b><span>タンパク質</span></div>
+      <div><b>~60<span style="font-size:12px">g</span></b><span>脂質は控えめ</span></div>
+    </div>
+    <p class="muted" style="margin:11px 0 0">
+      基礎代謝 約1,690kcal。当直の高活動を足しても、まず<b>「毎食タンパク質・揚げ物と甘い飲料を減らす」</b>だけで自然に赤字になります。厳密な計算より習慣が主役。
+    </p>
+  </div>
+
+  <div class="card">
+    <h2><span class="ic">🏠</span>非番・休みの献立（自炊・ここが勝負）</h2>
+    <div class="meal">
+      <b>朝</b> <span class="tag t">P 35g</span>
+      <ul><li>卵2〜3個＋納豆＋ごはん軽め（120g）</li>
+      <li>または オートミール40g＋プロテイン＋ヨーグルト</li></ul>
+    </div>
+    <div class="meal">
+      <b>昼</b> <span class="tag t">P 40g</span>
+      <ul><li>鶏むね or 魚（鮭・さば）＋野菜たっぷり＋ごはん普通（150g）</li>
+      <li>作り置きの「サラダチキン・ゆで卵・味噌汁」で時短</li></ul>
+    </div>
+    <div class="meal">
+      <b>夜</b> <span class="tag t">P 45g・糖質控えめ</span>
+      <ul><li>高タンパク低脂質（鶏むね・ささみ・白身魚・豆腐・卵）</li>
+      <li>ごはんは少なめ or 抜き、野菜と汁物で満腹に</li>
+      <li>20時以降はできるだけ食べない</li></ul>
+    </div>
+    <div class="note">💡 <b>作り置きのコツ</b>：非番の朝にまとめて「サラダチキン・ゆで卵6個・味噌汁・きんぴら」を作ると、次の当直の昼や忙しい日がラクになります。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="ic">🚒</span>当直日の食べ方（夜は後輩まかせでOK）</h2>
+    <div class="meal amber">
+      <b>朝・昼で貯金する</b> <span class="tag a">コントロール可</span>
+      <ul><li>朝：プロテイン＋おにぎり1個＋ゆで卵</li>
+      <li>昼：サラダチキン＋おにぎり1個（揚げ物は避ける）</li>
+      <li>甘い飲料をやめて水・お茶・ブラックに</li></ul>
+    </div>
+    <div class="meal amber">
+      <b>夜（後輩の手料理）は楽しむ。ただし3つだけ意識</b>
+      <ul><li>① <b>野菜・汁物から先に</b>食べる（早食い防止）</li>
+      <li>② <b>ごはんのおかわりはしない</b></li>
+      <li>③ 揚げ物は1個減らす・夜食/締めのカップ麺はパス</li></ul>
+    </div>
+    <div class="note">🍚 当直の夜は「管理しない日」と割り切ってOK。翌日の<b>非番でしっかり整えれば週トータルで必ず赤字</b>になります。罪悪感より継続。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="ic">🩺</span>脂肪肝を改善する食べ方</h2>
+    <p class="muted" style="margin:0 0 10px">減量そのものが最大の薬。<b>体重の7〜10%減（約73〜74kg）で肝臓の脂肪は大きく減ります</b>。加えて下の4つが効きます。</p>
+    <div class="meal" style="border-color:var(--red)">
+      <b>① 果糖・砂糖を減らす（最重要）</b>
+      <ul><li>ジュース・加糖コーヒー・エナジードリンク・清涼飲料をやめる</li>
+      <li>菓子パン・スイーツ・果物の食べ過ぎに注意（果糖は肝臓で脂肪になりやすい）</li></ul>
+    </div>
+    <div class="meal" style="border-color:var(--red)">
+      <b>② アルコールを控える</b>
+      <ul><li>脂肪肝の種類に関わらず、休肝日を増やすほど改善が早い</li>
+      <li>飲むなら量を決めて、締めの糖質（ラーメン等）はやめる</li></ul>
+    </div>
+    <div class="meal" style="border-color:var(--red)">
+      <b>③ 精製糖質より食物繊維・タンパク質</b>
+      <ul><li>白いごはん/パンを少し減らし、野菜・海藻・きのこ・豆を増やす</li>
+      <li>青魚(さば・いわし)の油(オメガ3)は肝臓にプラス</li></ul>
+    </div>
+    <div class="meal" style="border-color:var(--red)">
+      <b>④ 夜食をやめ、よく歩く</b>
+      <ul><li>就寝前の食事は肝臓に脂肪をためやすい</li>
+      <li>有酸素運動は肝脂肪を直接減らす。歩数目標を守る</li></ul>
+    </div>
+    <div class="note" style="background:var(--blue-l)">🏥 <b>医療の注意</b>：脂肪肝は自己流だけで判断せず、<b>健診の肝機能(AST/ALT/γ-GTP)や画像を定期的に確認</b>を。数値が高い・急な体調変化があるときは主治医に相談してください。このアプリは生活改善の補助です。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="ic">🥤</span>タンパク質40gの早見</h2>
+    <p class="muted" style="margin:0 0 8px">1日140gの内訳イメージ</p>
+    <div class="checks" style="pointer-events:none">
+      <div class="ck"><div class="tx">鶏むね100g（皮なし）<small>約23g</small></div></div>
+      <div class="ck"><div class="tx">卵1個<small>約6g</small></div></div>
+      <div class="ck"><div class="tx">納豆1パック<small>約7g</small></div></div>
+      <div class="ck"><div class="tx">サラダチキン1個<small>約22g</small></div></div>
+      <div class="ck"><div class="tx">プロテイン1杯<small>約22g</small></div></div>
+      <div class="ck"><div class="tx">ギリシャヨーグルト1個<small>約10g</small></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== トレーニングタブ ========== -->
+<section class="tab" id="tab-train">
+  <div class="card">
+    <h2><span class="ic">🏋️</span>当直サイクルに合わせた組み方</h2>
+    <p class="muted" style="margin:0 0 10px">自宅ダンベル＋自重で<b>週3回</b>。「当直明け（非番）の午前」か「休みの日」に。当直日はやらなくてOK。</p>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+      <tr style="color:var(--sub);text-align:left"><th style="padding:4px 0">日</th><th>メニュー</th></tr>
+      <tr style="border-top:1px solid var(--line)"><td style="padding:7px 0"><b>非番①</b></td><td>A：上半身プッシュ</td></tr>
+      <tr style="border-top:1px solid var(--line)"><td style="padding:7px 0"><b>休み</b></td><td>B：下半身</td></tr>
+      <tr style="border-top:1px solid var(--line)"><td style="padding:7px 0"><b>非番②</b></td><td>C：上半身プル＋体幹</td></tr>
+    </table>
+    <p class="muted" style="margin:9px 0 0">※順番はサイクル次第で前後OK。各25〜35分。フォーム優先、限界の1〜2回手前で止める。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="ic">🅰️</span>A：上半身プッシュ</h2>
+    <div id="menuA"></div>
+  </div>
+  <div class="card">
+    <h2><span class="ic">🅱️</span>B：下半身</h2>
+    <div id="menuB"></div>
+  </div>
+  <div class="card">
+    <h2><span class="ic">🅲</span>C：上半身プル＋体幹</h2>
+    <div id="menuC"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="ic">🚶</span>ウォーキング</h2>
+    <div class="kpi">
+      <div><b>8千〜1万</b><span>歩/日</span></div>
+      <div><b>30〜40<span style="font-size:12px">分</span></b><span>早歩き</span></div>
+      <div><b>非番/休</b><span>まとめて</span></div>
+    </div>
+    <p class="muted" style="margin:11px 0 0">当直明けの帰り道や休みの朝に、<b>少し息が上がる早歩き</b>で30〜40分。会話ができるギリギリの速さが脂肪燃焼にちょうど良いペースです。膝が不安な日は無理せず時間を分割。</p>
+  </div>
+</section>
+
+<!-- ========== 計画タブ ========== -->
+<section class="tab" id="tab-plan">
+  <div class="card">
+    <h2><span class="ic">🎯</span>ロードマップ</h2>
+    <div id="milestones"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="ic">📐</span>今の数字</h2>
+    <div id="calcBox" class="muted"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="ic">🧭</span>続けるための原則</h2>
+    <details><summary>体重は毎日測っても一喜一憂しない</summary>
+      <p class="muted">水分・便・塩分で1〜2kgは平気で動きます。見るのは<b>1〜2週間の平均の傾き</b>。グラフの点が上下しても線が下向きならOK。</p></details>
+    <details><summary>停滞（2週間動かない）したら</summary>
+      <p class="muted">まず睡眠と歩数を見直す。それでも動かなければ、間食・飲料・当直の夜の量をひとつ削る。カロリーをさらに減らすより<b>タンパク質と歩数を増やす</b>方が安全に再加速します。</p></details>
+    <details><summary>当直で生活が乱れた週</summary>
+      <p class="muted">「非番でリセット」が合言葉。1食・1日ではなく<b>週単位</b>で赤字になっていればOK。完璧を目指して燃え尽きるのが一番の失敗。</p></details>
+    <details><summary>筋肉を落とさないために</summary>
+      <p class="muted">①タンパク質140g死守 ②週3の筋トレ継続 ③極端な食事制限をしない。この3つで、減るのを脂肪中心にできます。</p></details>
+  </div>
+
+  <div class="card">
+    <h2><span class="ic">⚙️</span>データ</h2>
+    <div class="row">
+      <button class="btn sec" onclick="exportData()">書き出し（バックアップ）</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn sec" onclick="document.getElementById('imp').click()">読み込み</button>
+      <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+    <p class="muted" style="margin:10px 0 0">データはこの端末の中だけに保存されます（外部送信なし）。機種変更の前は必ず書き出しを。</p>
+  </div>
+  <div style="height:8px"></div>
+</section>
+
+</main>
+
+<nav>
+  <button class="on" data-t="log" onclick="tab('log')"><span class="ni">📝</span>記録</button>
+  <button data-t="meal" onclick="tab('meal')"><span class="ni">🍽️</span>食事</button>
+  <button data-t="train" onclick="tab('train')"><span class="ni">🏋️</span>トレ</button>
+  <button data-t="plan" onclick="tab('plan')"><span class="ni">🎯</span>計画</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ===== 設定値 ===== */
+const START_WT=80, GOAL_WT=65, HEIGHT=174, AGE=40;
+const RATE=0.55;               // 目標: 週あたり減量kg
+const START_DATE="2026-08-29"; // 開始日
+const KEY="bodymake_v1";
+
+/* ===== データ ===== */
+let store={days:{}}; // days[date]={wt,day,checks:{},steps,sleep,memo}
+function load(){ try{const r=localStorage.getItem(KEY); if(r) store=JSON.parse(r);}catch(e){} }
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){toast('保存できませんでした');} }
+load();
+
+/* ===== 日付ユーティリティ ===== */
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmt(s){const [y,m,d]=s.split('-');return Number(m)+'/'+Number(d);}
+function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/864e5);}
+
+/* ===== チェック項目（日タイプ別） ===== */
+const CHECKS={
+  当直:[
+    ['protein','朝・昼でタンパク質を確保','プロテイン＋卵＋サラダチキン'],
+    ['drink','甘い飲料をやめた','水・お茶・ブラックで'],
+    ['veg','夜は野菜・汁物から食べた','早食い防止＆食べ過ぎ防止'],
+    ['nokawari','ごはんをおかわりしなかった','夜は後輩の料理を楽しんでOK'],
+    ['walk','よく動いた／歩いた','出動・訓練・移動でも◎'],
+  ],
+  非番:[
+    ['meal','自炊で高タンパク低脂質','ここが勝負の日'],
+    ['protein','タンパク質140gに届いた','鶏むね・卵・プロテイン'],
+    ['sugar','甘い飲料・砂糖を控えた','脂肪肝対策の最重要ポイント'],
+    ['alcohol','休肝日にした／飲み過ぎなし','肝機能の回復に効く'],
+    ['train','筋トレをやった','A/B/Cのどれか（休養日ならスキップ）'],
+    ['walk','早歩き30〜40分 or 8千歩','当直明けの帰り道でも'],
+    ['night','20時以降は食べない','夜食は肝臓に脂肪をためやすい'],
+  ],
+  休み:[
+    ['meal','自炊 or 選び方を工夫','外食は定食・和食寄りに'],
+    ['protein','タンパク質140gに届いた',''],
+    ['sugar','甘い飲料・砂糖を控えた','脂肪肝対策の最重要ポイント'],
+    ['alcohol','休肝日にした／飲み過ぎなし','肝機能の回復に効く'],
+    ['train','筋トレをやった','A/B/Cのどれか'],
+    ['walk','早歩き30〜40分 or 8千歩',''],
+    ['night','食べ過ぎ・夜食なし',''],
+  ],
+};
+
+/* ===== 現在の編集対象 ===== */
+let cur={date:todayStr(),day:'非番',checks:{}};
+
+function loadDateIntoForm(){
+  const d=cur.date; const rec=store.days[d];
+  document.getElementById('inDate').value=d;
+  if(rec){
+    cur.day=rec.day||'非番'; cur.checks=Object.assign({},rec.checks||{});
+    document.getElementById('inWt').value=rec.wt??'';
+    document.getElementById('inSteps').value=rec.steps??'';
+    document.getElementById('inSleep').value=rec.sleep??'';
+    document.getElementById('inMemo').value=rec.memo??'';
+  }else{
+    cur.checks={};
+    document.getElementById('inWt').value='';
+    document.getElementById('inSteps').value='';
+    document.getElementById('inSleep').value='';
+    document.getElementById('inMemo').value='';
+  }
+  renderDayChips(); renderChecks();
+}
+
+function setDay(d){ cur.day=d; if(!store.days[cur.date]) cur.checks={}; renderDayChips(); renderChecks(); }
+function renderDayChips(){
+  document.querySelectorAll('#dayChips .chip').forEach(c=>{
+    const on=c.dataset.day===cur.day;
+    c.className='chip'+(on?(cur.day==='当直'?' on amber':cur.day==='休み'?' on blue':' on'):'');
+  });
+}
+function renderChecks(){
+  const list=CHECKS[cur.day]||CHECKS['非番'];
+  const el=document.getElementById('checkList'); el.innerHTML='';
+  list.forEach(([k,t,s])=>{
+    const on=!!cur.checks[k];
+    const div=document.createElement('div');
+    div.className='ck'+(on?' on':'');
+    div.innerHTML='<div class="box">'+(on?'✓':'')+'</div><div class="tx">'+t+(s?'<small>'+s+'</small>':'')+'</div>';
+    div.onclick=()=>{cur.checks[k]=!cur.checks[k];renderChecks();};
+    el.appendChild(div);
+  });
+}
+
+function saveDay(){
+  const wt=parseFloat(document.getElementById('inWt').value);
+  const steps=parseInt(document.getElementById('inSteps').value)||null;
+  const sleep=parseFloat(document.getElementById('inSleep').value)||null;
+  const memo=document.getElementById('inMemo').value.trim();
+  if(isNaN(wt) && Object.keys(cur.checks).filter(k=>cur.checks[k]).length===0 && !memo){
+    toast('体重かチェックを入れてください'); return;
+  }
+  store.days[cur.date]={wt:isNaN(wt)?null:wt,day:cur.day,checks:cur.checks,steps,sleep,memo};
+  save(); toast('保存しました ✓'); renderAll();
+}
+
+/* ===== 履歴 ===== */
+function renderHist(){
+  const keys=Object.keys(store.days).sort().reverse();
+  const el=document.getElementById('histList');
+  if(!keys.length){el.innerHTML='まだ記録がありません。';return;}
+  el.innerHTML='';
+  const icon={当直:'🚒',非番:'🏠',休み:'☀️'};
+  keys.slice(0,30).forEach(k=>{
+    const r=store.days[k];
+    const done=Object.keys(r.checks||{}).filter(x=>r.checks[x]).length;
+    const total=(CHECKS[r.day]||[]).length;
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)';
+    row.innerHTML=
+      '<span style="width:44px;font-size:12px;color:var(--sub)">'+fmt(k)+'</span>'+
+      '<span>'+(icon[r.day]||'')+'</span>'+
+      '<b style="width:58px;color:var(--ink)">'+(r.wt!=null?r.wt.toFixed(1)+'<small style=\"font-weight:400;color:var(--sub)\">kg</small>':'—')+'</b>'+
+      '<span style="flex:1;font-size:12px;color:var(--sub)">'+
+        (total?('✓'+done+'/'+total):'')+
+        (r.steps?'　'+r.steps.toLocaleString()+'歩':'')+'</span>'+
+      '<button class="lnk" data-k="'+k+'">編集</button>';
+    row.querySelector('.lnk').onclick=()=>{cur.date=k;loadDateIntoForm();window.scrollTo({top:0,behavior:'smooth'});};
+    el.appendChild(row);
+  });
+}
+
+/* ===== 集計・ヘッダー ===== */
+function weighInList(){
+  return Object.keys(store.days).filter(k=>store.days[k].wt!=null)
+    .sort().map(k=>({date:k,wt:store.days[k].wt}));
+}
+function latestWt(){const l=weighInList();return l.length?l[l.length-1].wt:START_WT;}
+function movingAvg(){ // 直近測定の傾きベース残り予測
+  const l=weighInList(); if(l.length<2) return null;
+  const recent=l.slice(-14); // 直近最大14測定
+  const days=daysBetween(recent[0].date,recent[recent.length-1].date);
+  if(days<=0) return null;
+  const slopePerDay=(recent[recent.length-1].wt-recent[0].wt)/days; // 負なら減少
+  return slopePerDay;
+}
+function renderHeader(){
+  const cw=latestWt();
+  const done=START_WT-cw, total=START_WT-GOAL_WT;
+  const pct=Math.max(0,Math.min(100,done/total*100));
+  document.getElementById('hCur').textContent=cw.toFixed(1);
+  document.getElementById('hLeft').textContent=Math.max(0,(cw-GOAL_WT)).toFixed(1);
+  document.getElementById('hBar').style.width=pct+'%';
+  document.getElementById('hPct').textContent=Math.round(pct)+'%';
+  // 予測日
+  let eta='—';
+  const slope=movingAvg();
+  if(cw<=GOAL_WT){eta='達成🎉';}
+  else if(slope&&slope<-0.005){
+    const remain=cw-GOAL_WT; const d=Math.round(remain/(-slope));
+    const dt=new Date(Date.now()+d*864e5);
+    eta=(dt.getMonth()+1)+'/'+dt.getDate();
+  }else{
+    // 目標ペースで計算
+    const remain=cw-GOAL_WT; const d=Math.round(remain/RATE*7);
+    const dt=new Date(Date.now()+d*864e5);
+    eta='~'+(dt.getFullYear()!==new Date().getFullYear()?(dt.getFullYear()+'/'):'')+(dt.getMonth()+1)+'/'+dt.getDate();
+  }
+  document.getElementById('hEta').textContent=eta;
+}
+
+/* ===== グラフ ===== */
+function drawChart(){
+  const cv=document.getElementById('chart'); const dpr=window.devicePixelRatio||1;
+  const W=cv.clientWidth, H=180; cv.width=W*dpr; cv.height=H*dpr;
+  const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr); ctx.clearRect(0,0,W,H);
+  const css=getComputedStyle(document.body);
+  const line=css.getPropertyValue('--line'), sub=css.getPropertyValue('--sub');
+  const teal=css.getPropertyValue('--teal-d')||'#0b5c56', amber=css.getPropertyValue('--amber');
+  const data=weighInList();
+  const padL=32,padR=10,padT=12,padB=20; const pw=W-padL-padR, ph=H-padT-padB;
+  // y範囲
+  let ymin=GOAL_WT-1, ymax=START_WT+1;
+  data.forEach(d=>{ymin=Math.min(ymin,d.wt-1);ymax=Math.max(ymax,d.wt+1);});
+  const yTo=v=>padT+ph-(v-ymin)/(ymax-ymin)*ph;
+  // x範囲: 開始〜今日+少し
+  const t0=new Date(START_DATE).getTime();
+  const lastT=data.length?new Date(data[data.length-1].date).getTime():Date.now();
+  const t1=Math.max(lastT,Date.now())+3*864e5;
+  const xTo=t=>padL+(t-t0)/(t1-t0)*pw;
+  // グリッド(横線)
+  ctx.strokeStyle=line; ctx.fillStyle=sub; ctx.font='10px sans-serif'; ctx.lineWidth=1;
+  for(let v=Math.ceil(ymin);v<=Math.floor(ymax);v+=2){
+    const y=yTo(v); ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
+    ctx.fillText(v,4,y+3);
+  }
+  // 目標ライン(点線)
+  ctx.strokeStyle=amber; ctx.setLineDash([5,4]); ctx.lineWidth=1.5; ctx.beginPath();
+  ctx.moveTo(xTo(t0),yTo(START_WT));
+  const goalDays=(START_WT-GOAL_WT)/RATE*7;
+  const goalT=t0+goalDays*864e5;
+  ctx.lineTo(xTo(Math.min(goalT,t1)), yTo(goalT<=t1?GOAL_WT:START_WT-(t1-t0)/864e5/7*RATE));
+  ctx.stroke(); ctx.setLineDash([]);
+  // 実測線
+  if(data.length){
+    ctx.strokeStyle=teal; ctx.lineWidth=2.5; ctx.beginPath();
+    data.forEach((d,i)=>{const x=xTo(new Date(d.date).getTime()),y=yTo(d.wt);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.stroke();
+    ctx.fillStyle=teal;
+    data.forEach(d=>{const x=xTo(new Date(d.date).getTime()),y=yTo(d.wt);ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill();});
+  }else{
+    ctx.fillStyle=sub;ctx.font='12px sans-serif';ctx.textAlign='center';
+    ctx.fillText('体重を記録するとグラフが出ます',W/2,H/2);ctx.textAlign='left';
+  }
+}
+
+/* ===== トレーニングメニュー ===== */
+const MENUS={
+  A:[['ダンベルフロアプレス','大胸筋。床で肩を守りながら','3×10-12'],
+     ['ダンベルショルダープレス','肩全体','3×10-12'],
+     ['腕立て伏せ','仕上げに自重で追い込み','3×限界-2'],
+     ['サイドレイズ','肩の丸み。軽い重量で','3×15'],
+     ['トライセップスキックバック','二の腕','2×12-15']],
+  B:[['ダンベルスクワット','脚全体。大きい筋肉で代謝UP','3×12-15'],
+     ['ルーマニアンデッドリフト','もも裏・お尻。背中まっすぐ','3×10-12'],
+     ['フロントランジ','片脚ずつ。バランスも','3×10/脚'],
+     ['カーフレイズ','ふくらはぎ','3×20'],
+     ['プランク','体幹','3×40-60秒']],
+  C:[['ワンハンドダンベルロウ','背中の厚み','3×10-12/腕'],
+     ['ダンベルデッドリフト','背中全体','3×10-12'],
+     ['ダンベルカール','力こぶ','3×12'],
+     ['リアレイズ','肩の後ろ・姿勢改善','3×15'],
+     ['レッグレイズ','下腹','3×15']],
+};
+function renderMenus(){
+  for(const k of ['A','B','C']){
+    const el=document.getElementById('menu'+k); el.innerHTML='';
+    MENUS[k].forEach(([nm,desc,set])=>{
+      const d=document.createElement('div');d.className='ex';
+      d.innerHTML='<div class="nm">'+nm+'<small>'+desc+'</small></div><div class="set">'+set+'</div>';
+      el.appendChild(d);
+    });
+  }
+}
+
+/* ===== マイルストーン ===== */
+function renderMilestones(){
+  const el=document.getElementById('milestones');
+  const cw=latestWt();
+  const ms=[
+    ['77kg','最初の-3kg。むくみが取れ体が軽く',77],
+    ['74kg','折り返し手前。服がゆるくなる',74],
+    ['70kg','大台。BMI 23、見た目が変わる',70],
+    ['67kg','ラストスパート',67],
+    ['65kg','ゴール！BMI 21.5 標準の中心',65],
+  ];
+  el.innerHTML='';
+  ms.forEach(([w,d,v])=>{
+    const done=cw<=v;
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--line)';
+    div.innerHTML=
+      '<div class="box" style="width:22px;height:22px;border-radius:50%;border:2px solid '+(done?'var(--green)':'var(--line)')+';background:'+(done?'var(--green)':'transparent')+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex:none">'+(done?'✓':'')+'</div>'+
+      '<b style="width:52px;'+(done?'color:var(--green)':'')+'">'+w+'</b>'+
+      '<span class="muted" style="flex:1">'+d+'</span>';
+    el.appendChild(div);
+  });
+}
+
+/* ===== 数字 ===== */
+function renderCalc(){
+  const cw=latestWt();
+  const bmr=Math.round(10*cw+6.25*HEIGHT-5*AGE+5);
+  const bmi=(cw/((HEIGHT/100)**2)).toFixed(1);
+  const goalBmi=(GOAL_WT/((HEIGHT/100)**2)).toFixed(1);
+  const remain=(cw-GOAL_WT).toFixed(1);
+  const weeks=Math.ceil((cw-GOAL_WT)/RATE);
+  document.getElementById('calcBox').innerHTML=
+    '<table style="width:100%;border-collapse:collapse">'+
+    row2('現在の体重',cw.toFixed(1)+' kg')+
+    row2('現在のBMI',bmi+'（目標 '+goalBmi+'）')+
+    row2('基礎代謝(推定)',bmr.toLocaleString()+' kcal/日')+
+    row2('目標まで',remain+' kg')+
+    row2('目標ペースでの残り','約'+weeks+'週（週-'+RATE+'kg）')+
+    '</table>'+
+    '<p class="muted" style="margin:10px 0 0">推定摂取目安 <b>'+(bmr+300)+'〜'+(bmr+450)+'kcal</b>（活動込み）から1日<b>約500kcalの赤字</b>で週-0.5kg強。数字はあくまで目安、実際はグラフの傾きで微調整します。</p>';
+}
+function row2(a,b){return '<tr><td style="padding:6px 0;color:var(--sub);border-bottom:1px solid var(--line)">'+a+'</td><td style="padding:6px 0;text-align:right;font-weight:700;border-bottom:1px solid var(--line)">'+b+'</td></tr>';}
+
+/* ===== タブ ===== */
+function tab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('tab-'+name).classList.add('on');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===name));
+  if(name==='log') drawChart();
+  window.scrollTo({top:0});
+}
+
+/* ===== 書き出し/読み込み ===== */
+function exportData(){
+  const blob=new Blob([JSON.stringify(store)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='bodymake_backup_'+todayStr()+'.json'; a.click();
+  URL.revokeObjectURL(url); toast('書き出しました');
+}
+function importData(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result); if(d.days){store=d;save();loadDateIntoForm();renderAll();toast('読み込みました ✓');}else toast('形式が違います');}catch(x){toast('読み込めませんでした');}};
+  r.readAsText(f);
+}
+
+/* ===== toast ===== */
+let toastT;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
+
+/* ===== 全描画 ===== */
+function renderAll(){renderHeader();renderHist();drawChart();renderMilestones();renderCalc();}
+
+/* ===== 初期化 ===== */
+document.getElementById('inDate').addEventListener('change',e=>{cur.date=e.target.value||todayStr();loadDateIntoForm();});
+renderMenus();
+loadDateIntoForm();
+renderAll();
+window.addEventListener('resize',drawChart);
+</script>
+</body>
+</html>
