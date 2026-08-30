@@ -229,12 +229,14 @@
 
   <div class="card">
     <h2><span class="ic">🏠</span>非番・休みの献立（自炊・ここが勝負）</h2>
+    <p class="muted" style="margin:-2px 0 8px;font-size:12px">朝食・昼食・夕食から、その日食べるものを<b>1つずつ選択</b>（同じものを再タップで解除）</p>
     <div id="menuHome"></div>
     <div class="note">💡 <b>作り置きのコツ</b>：非番の朝にまとめて「サラダチキン・ゆで卵6個・味噌汁・きんぴら」を作ると、次の当直の昼や忙しい日がラクになります。</div>
   </div>
 
   <div class="card">
     <h2><span class="ic">🚒</span>当直日の食べ方（夜は後輩まかせでOK）</h2>
+    <p class="muted" style="margin:-2px 0 8px;font-size:12px">朝食・昼食を<b>1つずつ選択</b>。<b>夕食は後輩の料理を楽しむ</b>ので選択なし（野菜から食べる・おかわりしないだけ意識）</p>
     <div id="menuDuty"></div>
     <div class="note">🍚 当直の夜は「管理しない日」と割り切ってOK。翌日の<b>非番でしっかり整えれば週トータルで必ず赤字</b>になります。罪悪感より継続。</div>
   </div>
@@ -460,9 +462,19 @@ function toggleTick(key){
   if(cur.ticks[key])delete cur.ticks[key];else cur.ticks[key]=true;
   persistTicks(); renderMeal(); renderMenus(); renderHist();
 }
+/* 単一選択（朝/昼/夕 で1つだけ） */
+function selectRadio(group,key){
+  if(!cur.ticks)cur.ticks={};
+  const was=cur.ticks[key];
+  Object.keys(cur.ticks).forEach(k=>{if(k.indexOf(group+'::')===0)delete cur.ticks[k];});
+  if(!was)cur.ticks[key]=true;               // 同じものを再タップで解除
+  persistTicks(); renderMeal(); renderMenus(); renderHist();
+}
 /* クリック委譲：data-key付きチェックのみ */
 document.addEventListener('click',e=>{
-  const el=e.target.closest('.ck[data-key]'); if(!el)return; toggleTick(el.dataset.key);
+  const el=e.target.closest('.ck[data-key]'); if(!el)return;
+  if(el.dataset.radio) selectRadio(el.dataset.radio, el.dataset.key);
+  else toggleTick(el.dataset.key);
 });
 function tickRow(key,text,sub,small){
   const on=isTick(key);
@@ -471,16 +483,16 @@ function tickRow(key,text,sub,small){
   return '<div class="ck'+(on?' on':'')+'" data-key="'+key+'"'+pd+'><div class="box"'+bx+'>'+(on?'✓':'')+'</div><div class="tx">'+text+(sub?'<small>'+sub+'</small>':'')+'</div></div>';
 }
 
-/* ===== 食事メニュー（チェック式） ===== */
+/* ===== 食事メニュー（朝/昼/夕 それぞれ1つ選ぶ） ===== */
 const MEAL={
   home:[
-    {h:'朝',tag:'P35g',items:['卵2〜3個＋納豆＋ごはん軽め(120g)','またはオートミール40g＋プロテイン＋ヨーグルト']},
-    {h:'昼',tag:'P40g',items:['鶏むね/魚(鮭・さば)＋野菜たっぷり＋ごはん(150g)','作り置き(サラダチキン・ゆで卵・味噌汁)で時短']},
-    {h:'夜',tag:'P45g・糖質控えめ',items:['高タンパク低脂質(鶏むね・ささみ・白身魚・豆腐・卵)','ごはんは少なめor抜き、野菜と汁物で満腹に','20時以降はできるだけ食べない']},
+    {g:'mh_asa',h:'朝食',tag:'1つ選ぶ',opts:['卵かけごはん(卵2個)＋納豆','オートミール40g＋プロテイン','プロテイン＋ゆで卵2個','ギリシャヨーグルト＋バナナ＋卵','食パン＋卵＋サラダチキン']},
+    {g:'mh_hiru',h:'昼食',tag:'1つ選ぶ',opts:['鶏むね＋野菜＋ごはん(150g)','焼き魚定食(鮭・さば)','サラダチキン＋おにぎり＋味噌汁','豚しゃぶサラダ＋ごはん','卵とじうどん＋冷奴']},
+    {g:'mh_yoru',h:'夕食',tag:'1つ選ぶ・糖質控えめ',opts:['鶏むね/ささみ＋野菜炒め','白身魚＋豆腐＋味噌汁','納豆＋卵＋サラダ＋少量ごはん','刺身＋冷奴＋野菜','鍋(鶏・魚・野菜たっぷり)']},
   ],
   duty:[
-    {h:'朝・昼で貯金',tag:'コントロール可',items:['朝：プロテイン＋おにぎり1個＋ゆで卵','昼：サラダチキン＋おにぎり1個(揚げ物は避ける)','甘い飲料をやめて水・お茶・ブラックに']},
-    {h:'夜(後輩の料理)の3つ',tag:'これだけ意識',items:['野菜・汁物から先に食べる','ごはんのおかわりはしない','揚げ物は1個減らす・締めのカップ麺はパス']},
+    {g:'md_asa',h:'朝食（当直）',tag:'1つ選ぶ',opts:['プロテイン＋おにぎり1個＋ゆで卵','サラダチキン＋おにぎり','ヨーグルト＋バナナ＋プロテイン','卵サンド＋無糖コーヒー']},
+    {g:'md_hiru',h:'昼食（当直）',tag:'1つ選ぶ・揚げ物は避ける',opts:['サラダチキン＋おにぎり1個','幕の内弁当(揚げ物は残す)','そば＋ゆで卵','おにぎり＋サラダ＋プロテイン']},
   ],
 };
 const MEAL_RULES=[
@@ -491,20 +503,28 @@ const MEAL_RULES=[
   ['r_night','夜食をしなかった'],
   ['r_alc','休肝日／飲み過ぎなし'],
 ];
-function renderMenuBlock(elId,data,prefix){
+function radioRow(group,idx,text,amber){
+  const key=group+'::'+idx; const on=isTick(key);
+  return '<div class="ck'+(on?' on':'')+'" data-key="'+key+'" data-radio="'+group+'" style="padding:8px 4px">'+
+    '<div class="box" style="width:22px;height:22px;border-radius:50%">'+(on?'✓':'')+'</div>'+
+    '<div class="tx">'+text+'</div></div>';
+}
+function renderMealBlock(elId,data){
   const el=document.getElementById(elId); if(!el)return; el.innerHTML='';
-  data.forEach((g,gi)=>{
-    const amber=(data===MEAL.duty);
+  const amber=(data===MEAL.duty);
+  data.forEach((mealGrp)=>{
+    const chosen=data.length&&mealGrp.opts.some((o,i)=>isTick(mealGrp.g+'::'+i));
     const w=document.createElement('div'); w.className='meal'+(amber?' amber':'');
-    let h='<b>'+g.h+'</b>'+(g.tag?' <span class="tag '+(amber?'a':'t')+'">'+g.tag+'</span>':'');
+    let h='<b>'+mealGrp.h+'</b> <span class="tag '+(amber?'a':'t')+'">'+mealGrp.tag+'</span>'+
+      (chosen?' <span style="color:var(--green);font-size:11px;font-weight:700">選択済✓</span>':'');
     h+='<div class="checks" style="margin-top:2px">';
-    g.items.forEach((it,ii)=>{h+=tickRow(prefix+gi+'_'+ii,it,'',true);});
+    mealGrp.opts.forEach((o,i)=>{h+=radioRow(mealGrp.g,i,o,amber);});
     h+='</div>'; w.innerHTML=h; el.appendChild(w);
   });
 }
 function renderMeal(){
-  renderMenuBlock('menuHome',MEAL.home,'mh');
-  renderMenuBlock('menuDuty',MEAL.duty,'md');
+  renderMealBlock('menuHome',MEAL.home);
+  renderMealBlock('menuDuty',MEAL.duty);
   const el=document.getElementById('mealRules');
   if(el){el.innerHTML=MEAL_RULES.map(([k,t])=>tickRow(k,t,'')).join('');}
 }
