@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>株価評価</title>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171b21; --panel2:#1e242c; --line:#2a323c;
+    --text:#e8edf2; --muted:#9aa7b4; --accent:#4ea1ff; --accent2:#7c5cff;
+    --ok:#3ecf8e; --warn:#ffb454; --danger:#ff6b6b; --chip:#232b34;
+    --radius:16px; --shadow:0 4px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f4f6f9; --panel:#ffffff; --panel2:#f0f3f7; --line:#e2e8f0;
+      --text:#1a2230; --muted:#5a6b7d; --chip:#eef2f7; --shadow:0 4px 20px rgba(20,40,80,.08);
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.6;
+    padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 90px);
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    position:sticky; top:0; z-index:20; backdrop-filter:blur(12px);
+    background:color-mix(in srgb, var(--bg) 82%, transparent);
+    border-bottom:1px solid var(--line); padding:14px 18px;
+    padding-top:calc(env(safe-area-inset-top) + 12px);
+    display:flex; align-items:flex-start; gap:10px;
+  }
+  header .htxt{flex:1;min-width:0}
+  header h1{font-size:18px;margin:0;display:flex;align-items:center;gap:8px}
+  header .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .menubtn{flex:none;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    width:42px;height:42px;font-size:19px;color:var(--text);cursor:pointer;display:grid;place-items:center}
+  .menubtn:active{background:var(--chip)}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 16px 0}
+
+  /* card */
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); margin-bottom:14px; overflow:hidden;
+  }
+  .evhead{padding:16px 16px 14px; cursor:pointer; user-select:none; display:flex; gap:12px; align-items:flex-start}
+  .evhead:active{background:var(--panel2)}
+  .gradebadge{flex:none;width:52px;height:52px;border-radius:14px;display:grid;place-items:center;
+    font-size:22px;font-weight:800;color:#fff;line-height:1}
+  .g-Aplus{background:linear-gradient(135deg,#3ecf8e,#2bb673)}
+  .g-A{background:linear-gradient(135deg,#4ea1ff,#3d7fd6)}
+  .g-Bplus{background:linear-gradient(135deg,#7c5cff,#5f45cc)}
+  .g-B{background:linear-gradient(135deg,#ffb454,#e09328)}
+  .g-C{background:linear-gradient(135deg,#ff6b6b,#d94f4f)}
+  .evtitle{flex:1;min-width:0}
+  .evtitle h2{margin:0;font-size:17px;font-weight:650;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .evtitle h2 .code{font-size:12px;color:var(--muted);font-weight:500}
+  .evmeta{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px;align-items:center}
+  .chip{font-size:11px;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--muted);white-space:nowrap}
+  .chip.score{color:var(--accent);font-weight:600}
+  .chip.step{font-weight:600}
+  .step-pass{background:rgba(62,207,142,.15);color:var(--ok)}
+  .step-fail{background:rgba(255,107,107,.13);color:var(--danger)}
+  .timing{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:650;padding:3px 10px;border-radius:999px;margin-top:7px}
+  .t-go{background:rgba(62,207,142,.15);color:var(--ok)}
+  .t-wait{background:rgba(78,161,255,.14);color:var(--accent)}
+  .t-careful{background:rgba(255,180,84,.16);color:var(--warn)}
+  .t-avoid{background:rgba(255,107,107,.14);color:var(--danger)}
+  .t-cond{background:rgba(124,92,255,.16);color:var(--accent2)}
+  .chev{flex:none;color:var(--muted);transition:transform .25s;margin-top:2px}
+  .card.open .chev{transform:rotate(90deg)}
+
+  .body{display:none;padding:0 16px 8px;border-top:1px solid var(--line)}
+  .card.open .body{display:block}
+  .sec{padding:14px 0;border-bottom:1px solid var(--line)}
+  .sec:last-child{border-bottom:none}
+  .sec h3{margin:0 0 10px;font-size:13px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:7px}
+
+  table.metrics{width:100%;border-collapse:collapse;font-size:13.5px}
+  table.metrics td{padding:8px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.metrics tr:last-child td{border-bottom:none}
+  table.metrics .m-name{color:var(--text);padding-right:8px}
+  table.metrics .m-name .mn{display:block;font-weight:500}
+  table.metrics .m-name .md{display:block;font-size:11px;color:var(--muted);font-weight:400;line-height:1.45;margin-top:2px}
+  table.metrics .m-val{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+  table.metrics .m-eval{text-align:center;width:34px;font-size:15px;font-weight:700}
+  .ev-o{color:var(--ok)} .ev-t{color:var(--warn)} .ev-x{color:var(--danger)}
+
+  .stepgrid{display:flex;flex-direction:column;gap:7px}
+  .steprow{display:flex;align-items:center;gap:9px;font-size:13.5px}
+  .steprow .si{flex:none;width:20px;text-align:center;font-weight:700}
+  .steprow .st{flex:1}
+  .steprow .sv{color:var(--muted);font-variant-numeric:tabular-nums}
+
+  .tf{display:flex;flex-direction:column;gap:8px}
+  .tfrow{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border-radius:10px;padding:9px 11px}
+  .tfrow .tfk{flex:none;width:38px;font-size:12px;color:var(--muted);font-weight:600;padding-top:1px}
+  .tfrow .tfv{flex:1;font-size:13px}
+  .tfrow .tfv b{font-weight:650}
+  .concl{margin-top:11px;padding:12px 13px;border-radius:12px;font-size:13.5px;line-height:1.65;
+    background:var(--panel2);border:1px solid var(--line)}
+  .concl .ctag{font-weight:700;margin-right:6px}
+
+  .notebox label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:600}
+  .notebox textarea{width:100%;min-height:80px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:12px;padding:12px 13px;color:var(--text);font-size:14.5px;font-family:inherit;line-height:1.6;resize:vertical}
+  .notebox textarea:focus{outline:none;border-color:var(--accent)}
+
+  .evactions{display:flex;gap:8px;padding:12px 0 4px;flex-wrap:wrap}
+  .evactions button{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--muted);
+    font-size:12.5px;padding:8px 12px;cursor:pointer;font-family:inherit}
+  .evactions button:active{background:var(--chip)}
+  .evactions .danger:active{color:var(--danger);border-color:var(--danger)}
+
+  .fab{
+    position:fixed; right:18px; bottom:calc(env(safe-area-inset-bottom) + 22px); z-index:30;
+    width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:32px;
+    box-shadow:0 6px 22px rgba(78,161,255,.45);display:grid;place-items:center;
+  }
+  .fab:active{transform:scale(.94)}
+  .empty{text-align:center;color:var(--muted);padding:60px 20px}
+  .empty .big{font-size:44px;margin-bottom:10px}
+
+  /* modal / sheet */
+  .modal{position:fixed;inset:0;z-index:40;display:none;align-items:flex-end;justify-content:center}
+  .modal.on{display:flex}
+  .modal .bd{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(2px)}
+  .sheet{position:relative;width:100%;max-width:720px;background:var(--panel);border-radius:20px 20px 0 0;
+    padding:20px 18px calc(env(safe-area-inset-bottom) + 24px);box-shadow:var(--shadow);
+    max-height:92vh;overflow:auto;animation:up .25s ease}
+  @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .sheet h2{margin:0 0 4px;font-size:18px}
+  .sheet .hint{font-size:12px;color:var(--muted);margin-bottom:16px}
+  .grp{margin:16px 0 8px;font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.02em}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  .field label .goal{color:var(--muted);opacity:.85}
+  .field label .fdesc{display:block;font-weight:400;opacity:.9;margin-top:3px;font-size:11px;line-height:1.45}
+  .field input[type=text],.field input[type=number]{width:100%;background:var(--panel2);
+    border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--text);font-size:16px;font-family:inherit}
+  .field input:focus{outline:none;border-color:var(--accent)}
+  .row2{display:flex;gap:10px}
+  .row2 .field{flex:1}
+  .seg{display:flex;flex-wrap:wrap;gap:8px}
+  .seg button{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:9px 12px;
+    color:var(--text);font-size:13px;cursor:pointer;font-family:inherit}
+  .seg button.sel{border-color:var(--accent);background:rgba(78,161,255,.12);color:var(--accent)}
+  .checkline{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:12px;padding:11px 13px;cursor:pointer;margin-bottom:12px}
+  .checkline .cb{flex:none;width:22px;height:22px;border-radius:7px;border:2px solid var(--line);
+    display:grid;place-items:center;font-size:13px;color:#fff;transition:.15s}
+  .checkline .cb.on{background:var(--ok);border-color:var(--ok)}
+  .checkline .ct{flex:1;font-size:14px}
+  .checkline .ct small{display:block;font-size:11px;color:var(--muted)}
+  .sheet .go{width:100%;margin-top:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:650;padding:14px;cursor:pointer;font-family:inherit}
+  .sheet .go:active{opacity:.85}
+  .tmplnote{font-size:11.5px;color:var(--muted);background:var(--panel2);border-radius:10px;padding:9px 12px;margin-top:6px;line-height:1.5}
+  .divider{display:flex;align-items:center;gap:10px;margin:18px 0 12px;color:var(--muted);font-size:12px}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+  .datarow{display:flex;align-items:center;gap:12px;width:100%;background:var(--panel2);border:1px solid var(--line);
+    border-radius:12px;padding:13px 14px;color:var(--text);font-size:15px;cursor:pointer;font-family:inherit;margin-bottom:9px;text-align:left}
+  .datarow:active{background:var(--chip)}
+  .datarow .di{font-size:20px;flex:none}
+  .datarow .dt{flex:1}
+  .datarow .dt small{display:block;font-size:11.5px;color:var(--muted);font-weight:400;margin-top:1px}
+  .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 100px);transform:translateX(-50%);
+    background:var(--text);color:var(--bg);font-size:13px;padding:10px 18px;border-radius:99px;z-index:60;
+    opacity:0;transition:opacity .25s;pointer-events:none;box-shadow:var(--shadow)}
+  .toast.on{opacity:1}
+  .disc{font-size:11px;color:var(--muted);text-align:center;padding:4px 20px 24px;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <div class="htxt">
+    <h1>📊 株価評価</h1>
+    <div class="sub">指標を手入力 → 質（配当銘柄）＋タイミングを機械判定</div>
+  </div>
+  <button class="menubtn" id="menubtn" title="データ">≡</button>
+</header>
+
+<div class="wrap" id="list"></div>
+
+<button class="fab" id="fab">＋</button>
+
+<!-- add / edit sheet -->
+<div class="modal" id="modal">
+  <div class="bd" data-close></div>
+  <div class="sheet">
+    <h2 id="sheet-title">銘柄を評価</h2>
+    <div class="hint">TradingViewや証券会社で見た数値を入れると、下の一覧に評価が出ます。空欄はデータなし扱い。</div>
+
+    <input type="hidden" id="f-id">
+    <div class="row2">
+      <div class="field"><label>銘柄名</label><input type="text" id="f-name" placeholder="例：KPP"></div>
+      <div class="field"><label>コード</label><input type="text" id="f-code" placeholder="例：9274" inputmode="numeric"></div>
+    </div>
+
+    <div class="grp">① STEP1スクリーニング＋② 財務（質）</div>
+    <div class="row2">
+      <div class="field"><label>配当利回り(%) <span class="goal">3.5↑</span></label><input type="number" step="0.01" id="f-div" inputmode="decimal"></div>
+      <div class="field"><label>配当性向(%) <span class="goal">50↓</span></label><input type="number" step="0.1" id="f-payout" inputmode="decimal"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>PER(倍) <span class="goal">10↓</span></label><input type="number" step="0.01" id="f-per" inputmode="decimal"></div>
+      <div class="field"><label>PBR(倍) <span class="goal">1.0↓</span></label><input type="number" step="0.01" id="f-pbr" inputmode="decimal"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>ROE(%) <span class="goal">8↑</span></label><input type="number" step="0.1" id="f-roe" inputmode="decimal"></div>
+      <div class="field"><label>ROA(%) <span class="goal">3↑</span></label><input type="number" step="0.1" id="f-roa" inputmode="decimal"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>営業利益率(%)</label><input type="number" step="0.1" id="f-opm" inputmode="decimal"></div>
+      <div class="field"><label>自己資本比率(%) <span class="goal">20↑</span></label><input type="number" step="0.1" id="f-eq" inputmode="decimal"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>DEレシオ(倍) <span class="goal">1.5↓</span></label><input type="number" step="0.01" id="f-de" inputmode="decimal"></div>
+      <div class="field"><label>流動比率(倍) <span class="goal">1.0↑</span></label><input type="number" step="0.01" id="f-cr" inputmode="decimal"></div>
+    </div>
+    <div class="checkline" id="f-sma-line">
+      <div class="cb" id="f-sma-cb"></div>
+      <div class="ct">株価がSMA50・100・150・200を上抜け<small>STEP1の4条件目（全線上抜けならON）</small></div>
+    </div>
+
+    <div class="grp">④ 大局タイミング（月足→週足で方向）</div>
+    <div class="field"><label>月足（方向・環境認識）<small class="fdesc">大きな方向を決める。上位足が最優先</small></label><div class="seg" id="f-m"></div></div>
+    <div class="field"><label>週足（中期の流れ）<small class="fdesc">多年ぶり高値ブレイクは強い追い風</small></label><div class="seg" id="f-w"></div></div>
+
+    <div class="grp">④-2 日足エントリー（いつ買うか）</div>
+    <div class="field"><label>日足RSI（数値）<small class="fdesc">40〜60=健全 ／ 70超=買われすぎ＝押し目待ち ／ 30未満=売られすぎ＝反発期待</small></label><input type="number" step="1" id="f-rsi" inputmode="decimal" placeholder="例：55"></div>
+    <div class="field"><label>MACD<small class="fdesc">ゴールデンクロス(GC)＝上向きサイン／デッドクロス(DC)＝反落</small></label><div class="seg" id="f-macd"></div></div>
+    <div class="field"><label>移動平均の並び<small class="fdesc">短期&gt;中期&gt;長期の上昇配列が理想</small></label><div class="seg" id="f-ma"></div></div>
+    <div class="field"><label>ローソクの位置・形<small class="fdesc">押し目＝入りやすい／垂直上昇＝乖離大で反落リスク</small></label><div class="seg" id="f-pos"></div></div>
+
+    <div class="field" style="margin-top:8px"><label>📝 メモ・自由記述（懸念点／次回決算の確認点など）</label>
+      <textarea id="f-note" style="width:100%;min-height:74px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 13px;color:var(--text);font-size:14.5px;font-family:inherit;line-height:1.6;resize:vertical"></textarea>
+    </div>
+
+    <button class="go" id="f-go">評価する</button>
+    <div class="tmplnote">この評価は売買推奨・投資助言ではありません。最終判断はご自身で。</div>
+  </div>
+</div>
+
+<!-- data sheet -->
+<div class="modal" id="datamodal">
+  <div class="bd" data-close></div>
+  <div class="sheet">
+    <h2>🗂 データ</h2>
+    <div class="hint">アップデートしても消えないよう、時々バックアップを取りましょう（端末内保存）。</div>
+    <button class="datarow" id="d-export"><span class="di">💾</span><span class="dt">JSONで書き出し（バックアップ）<small>全銘柄を1ファイルに保存</small></span></button>
+    <button class="datarow" id="d-import"><span class="di">📥</span><span class="dt">JSONを読み込み（復元・移行）<small>別端末のデータもマージして取り込む</small></span></button>
+    <button class="datarow" id="d-md"><span class="di">📝</span><span class="dt">Markdownで書き出し<small>第二の脳など外部メモへ貼れる形式</small></span></button>
+    <div class="divider">並び替え</div>
+    <button class="datarow" id="d-sort-score"><span class="di">🏆</span><span class="dt">スコア高い順に並べる</span></button>
+    <button class="datarow" id="d-sort-new"><span class="di">🕐</span><span class="dt">新しく追加した順に並べる</span></button>
+  </div>
+</div>
+
+<input type="file" id="fileinput" accept="application/json,.json" style="display:none">
+<div class="toast" id="toast"></div>
+<div class="disc">評価基準：スクリーニング指標ガイドv3（10項目スコア）＋配当銘柄の三段階読み取り（月足×週足×日足）。売買推奨ではありません。</div>
+
+<script>
+/* ============================================================
+   採点ロジック（screening_v3.py と同一の閾値を移植）
+   戻り値スコア: 3=◎ / 2,1=△寄り / 0=中立 / -1=×
+   ============================================================ */
+function sc_per(v){ if(v==null||v<=0)return 0; if(v<=10)return 3; if(v<=15)return 1; if(v<=25)return 0; return -1; }
+function sc_pbr(v){ if(v==null||v<=0)return 0; if(v<=1.0)return 3; if(v<=1.5)return 1; if(v<=3.0)return 0; return -1; }
+function sc_div(v){ if(v==null)return 0; if(v>=3.5)return 3; if(v>=2.0)return 1; if(v>=1.0)return 0; return -1; }
+function sc_payout(v){ if(v==null)return 1; if(v<=30)return 3; if(v<=50)return 2; if(v<=70)return 1; if(v<=80)return 0; return -1; }
+function sc_roe(v){ if(v==null)return 0; if(v>=15)return 3; if(v>=10)return 2; if(v>=8)return 1; if(v>=5)return 0; return -1; }
+function sc_roa(v){ if(v==null)return 0; if(v>=5)return 3; if(v>=3)return 2; if(v>=1)return 1; if(v>=0.5)return 0; return -1; }
+function sc_opm(v){ if(v==null)return 0; if(v>=20)return 3; if(v>=10)return 2; if(v>=5)return 1; if(v>=1)return 0; return -1; }
+function sc_eq(v){ if(v==null)return 0; if(v>=60)return 3; if(v>=40)return 2; if(v>=20)return 1; if(v>=10)return 0; return -1; }
+function sc_de(v){ if(v==null)return 1; if(v<=0.25)return 3; if(v<=1.0)return 2; if(v<=1.5)return 1; if(v<=2.0)return 0; return -1; }
+function sc_cr(v){ if(v==null)return 0; if(v>=2.0)return 3; if(v>=1.5)return 2; if(v>=1.0)return 1; if(v>=0.8)return 0; return -1; }
+
+/* 10項目定義（表示順・単位） */
+const METRICS = [
+  {key:'div',   name:'配当利回り', unit:'%', fn:sc_div,   desc:'株価に対する年間配当の割合。配当スイングの入口。3.5%以上で○'},
+  {key:'per',   name:'PER',       unit:'倍', fn:sc_per,   desc:'株価÷1株利益。利益の何年分か＝割安さの目安。10倍以下で○'},
+  {key:'pbr',   name:'PBR',       unit:'倍', fn:sc_pbr,   desc:'株価÷1株純資産。1倍未満は解散価値割れ＝割安'},
+  {key:'payout',name:'配当性向',   unit:'%', fn:sc_payout,desc:'利益のうち配当に回す割合。50%以下なら無理のない配当'},
+  {key:'roe',   name:'ROE',       unit:'%', fn:sc_roe,   desc:'自己資本でどれだけ稼ぐか＝稼ぐ力。8%以上が目安'},
+  {key:'roa',   name:'ROA',       unit:'%', fn:sc_roa,   desc:'総資産でどれだけ稼ぐか＝資産効率。3%以上が目安'},
+  {key:'opm',   name:'営業利益率', unit:'%', fn:sc_opm,   desc:'売上に対する本業の儲けの厚み。右肩上がりが理想'},
+  {key:'eq',    name:'自己資本比率',unit:'%', fn:sc_eq,    desc:'総資産に占める返済不要の資本。財務の頑丈さ。20%以上'},
+  {key:'de',    name:'DEレシオ',   unit:'倍', fn:sc_de,    desc:'有利子負債÷自己資本。借金の重さ。1.5倍以下で安全'},
+  {key:'cr',    name:'流動比率',   unit:'倍', fn:sc_cr,    desc:'短期資産÷短期負債。1年内の支払い能力。1.0倍以上'},
+];
+
+function grade(total){ if(total>=22)return'A+'; if(total>=18)return'A'; if(total>=14)return'B+'; if(total>=10)return'B'; return'C'; }
+function gradeClass(g){ return {'A+':'g-Aplus','A':'g-A','B+':'g-Bplus','B':'g-B','C':'g-C'}[g]; }
+/* スコア→○△×（表示用）: 3=○ / 0〜2=△（低いが許容） / -1=×（不可） */
+function mark(s){ if(s>=3)return{t:'○',c:'ev-o'}; if(s<=-1)return{t:'×',c:'ev-x'}; return{t:'△',c:'ev-t'}; }
+
+/* STEP1: 機械的4条件（利回り3.5↑ / PER10↓ / PBR1.0↓ / SMA上抜け） */
+function step1(m){
+  const c=[];
+  c.push({label:'配当利回り 3.5%以上', ok: m.div!=null && m.div>=3.5, val: m.div!=null? m.div+'%':'—'});
+  c.push({label:'PER 10倍以下',        ok: m.per!=null && m.per>0 && m.per<=10, val: m.per!=null? m.per+'倍':'—'});
+  c.push({label:'PBR 1.0倍以下',       ok: m.pbr!=null && m.pbr>0 && m.pbr<=1.0, val: m.pbr!=null? m.pbr+'倍':'—'});
+  c.push({label:'株価がSMA50/100/150/200を上抜け', ok: !!m.sma, val: m.sma?'上抜け':'未達'});
+  return {conds:c, pass: c.every(x=>x.ok)};
+}
+
+/* ④ タイミング：月足で方向、週足×日足でタイミング（上位足優先） */
+const TF = {
+  m:[ {k:'up',   label:'◎ 上昇 / 初動'},
+      {k:'high', label:'△ 高値圏・過熱'},
+      {k:'down', label:'× 下落・レンジ下'} ],
+  w:[ {k:'strong',label:'◎ 上昇・ブレイク'},
+      {k:'flat',  label:'△ 横ばい・中立'},
+      {k:'weak',  label:'× 過熱・崩れ'} ],
+};
+
+/* 日足エントリーの入力選択肢 */
+const DAILY = {
+  macd:[{k:'gc0',label:'GC直後'},{k:'gc',label:'GC継続'},{k:'flat',label:'中立・もみ合い'},{k:'dc',label:'DC・反落'}],
+  ma:[{k:'up',label:'上昇配列'},{k:'mix',label:'もつれ横ばい'},{k:'down',label:'下降配列'}],
+  pos:[{k:'dip',label:'押し目(25日線/0.618)'},{k:'mid',label:'通常の位置'},{k:'ext',label:'垂直上昇・乖離大'}],
+};
+function dailyLabel(axis,k){ const f=DAILY[axis].find(x=>x.k===k); return f?f.label:'—'; }
+function dAxisLabel(k){ return {healthy:'○ 健全',warm:'△ やや過熱',hot:'× 過熱'}[k]||'—'; }
+
+/* 日足RSIの帯（数値→評価とスコア） */
+function rsiBand(r){
+  if(r==null) return {k:'na', t:'未入力', c:'', s:0};
+  if(r<30)  return {k:'over_sold', t:'売られすぎ', c:'ev-o', s:1};
+  if(r<40)  return {k:'dip',       t:'押し目圏',   c:'ev-o', s:2};
+  if(r<=60) return {k:'healthy',   t:'健全',       c:'ev-o', s:2};
+  if(r<70)  return {k:'warm',      t:'やや過熱',   c:'ev-t', s:0};
+  return {k:'hot', t:'買われすぎ', c:'ev-x', s:-2};
+}
+
+/* 日足エントリー判定：RSI＋MACD＋移動平均＋位置を合成 */
+function dailyEntry(d){
+  const b=rsiBand(d.rsi);
+  const macdS={gc0:2,gc:1,flat:0,dc:-2}[d.macd] ?? 0;
+  const maS  ={up:2,mix:0,down:-2}[d.ma] ?? 0;
+  const posS ={dip:2,mid:0,ext:-2}[d.pos] ?? 0;
+  const total=b.s+macdS+maS+posS;
+  const pts=[
+    {name:'RSI',      val:(d.rsi==null?'—':d.rsi)+'（'+b.t+'）', c:b.c||'ev-t'},
+    {name:'MACD',     val:dailyLabel('macd',d.macd), c: macdS>0?'ev-o':macdS<0?'ev-x':'ev-t'},
+    {name:'移動平均', val:dailyLabel('ma',d.ma),     c: maS>0?'ev-o':maS<0?'ev-x':'ev-t'},
+    {name:'位置・形', val:dailyLabel('pos',d.pos),   c: posS>0?'ev-o':posS<0?'ev-x':'ev-t'},
+  ];
+  let lv,tag,txt;
+  if(d.ma==='down' || (macdS<=-2 && b.k==='hot')){
+    lv='avoid'; tag='見送り'; txt='日足が下向き（下降配列/反落）。押し目ではなく崩れの可能性。トレンドが上に戻るまで新規は見送り。';
+  }else if(total>=6){
+    lv='go'; tag='エントリー好機'; txt='押し目・RSI健全・MACD上向き・上昇配列がそろった順張りの好機。ここは入りやすい位置。';
+  }else if(total>=3){
+    lv='cond'; tag='分割で可'; txt='条件は良いが満点ではない。一気に入らず分割エントリー、または翌日の始値・出来高の確認を1つ待つと堅い。';
+  }else if(b.k==='hot' || d.pos==='ext'){
+    lv='wait'; tag='押し目待ち'; txt='買われすぎ／垂直上昇で乖離大。飛び乗らず、25日線やフィボ0.618への押し＋RSIが60台に落ち着くのを待つ。';
+  }else if(b.k==='over_sold' && d.macd==='gc0'){
+    lv='cond'; tag='反発の初動'; txt='売られすぎからのMACD好転＝反発の初動を狙える。ただしダマシに備え損切りを浅く置く。';
+  }else{
+    lv='wait'; tag='様子見'; txt='後押しが弱い。RSIが40〜60に整い、MACDが上向く／押し目をつけるのを待つ。';
+  }
+  return {lv,tag,txt,pts,total};
+}
+
+/* 日足入力 → 大局タイミング用の日足軸を自動導出 */
+function deriveD(d){
+  const b=rsiBand(d.rsi);
+  if(b.k==='hot' || d.pos==='ext') return 'hot';
+  if(b.k==='warm' || d.macd==='dc' || d.ma==='down') return 'warm';
+  return 'healthy';
+}
+function timing(m,w,d){
+  // 結論レベル: go(好機) / wait(押し目待ち) / careful(慎重) / avoid(見送り)
+  if(m==='down'){
+    return {lv:'avoid', tag:'見送り', txt:'月足が下落・レンジ下。戻り売り優勢で反発は一時的と見て、原則見送り。上位足の方向が上に変わるまで待つ。'};
+  }
+  if(m==='high'){ // 高値圏・過熱：方向は上でも上昇の最終局面を疑う
+    if(d==='hot'||w==='weak')
+      return {lv:'careful', tag:'慎重（小さく）', txt:'月足が数十年ぶりの高値圏で過熱ぎみ＝上昇の最終局面の可能性。日足も過熱なら飛び乗らず、新規は小さく・利確を早めに。押し目＋RSIが60台に落ち着くのを待つ。'};
+    return {lv:'careful', tag:'慎重（軽め）', txt:'月足は高値圏。方向は上だが深追い禁物。ポジションは軽く、利確ラインを準備して臨む。'};
+  }
+  // m==='up'（上昇 or 初動）
+  if(w==='weak'||d==='hot')
+    return {lv:'wait', tag:'押し目待ち', txt:'目線は買い。ただし日足/週足が過熱ぎみなので飛び乗らず、日足の押し目（25日線・フィボ0.618）＋RSIが60台に落ち着くのを待ってエントリー。'};
+  if(w==='strong'&&d==='healthy')
+    return {lv:'go', tag:'順張りの好機', txt:'月足◎×週足◎×日足○。上位足の方向に沿った順張りの好機。堂々とエントリーできる位置。'};
+  if(d==='warm'||w==='flat')
+    return {lv:'wait', tag:'様子見〜押し目', txt:'方向は買いだが、週足が横ばい／日足がやや過熱。もう一段の押し目か、週足の上抜けを確認してからが無難。'};
+  return {lv:'wait', tag:'様子見', txt:'方向は悪くないが、タイミングの後押しが弱い。日足の位置が整うのを待つ。'};
+}
+function timingClass(lv){ return {go:'t-go',wait:'t-wait',careful:'t-careful',avoid:'t-avoid',cond:'t-cond'}[lv]; }
+
+/* ============================================================
+   state
+   ============================================================ */
+const KEY='stockEval.v1';
+let state = load();
+let sortMode = state.sortMode||'score';
+
+function load(){
+  try{ const s=JSON.parse(localStorage.getItem(KEY)); if(s&&s.stocks){ s.stocks=s.stocks.map(buildStock); return s; } }catch(e){}
+  return seedInitial();
+}
+function save(){ state.sortMode=sortMode; localStorage.setItem(KEY, JSON.stringify(state)); }
+
+/* 初回サンプル：KPP(9274) ＝スキルの参考事例の数値 */
+function seedInitial(){
+  const kpp = buildStock({
+    id:uid(), name:'KPP（サンプル）', code:'9274',
+    m:{div:3.85, payout:41.17, per:10.03, pbr:0.65, roe:6.40, roa:1.55, opm:1.58, eq:23.9, de:1.54, cr:1.12, sma:true},
+    tf:{m:'high', w:'strong'},
+    daily:{rsi:72, macd:'gc', ma:'up', pos:'ext'},
+    note:'営業利益率がピーク3.3%から半減・借入金増加が懸念。次回決算で利益回復を確認。'
+  });
+  return {stocks:[kpp], sortMode:'score'};
+}
+function uid(){ return Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4); }
+
+/* 入力 → 評価結果を内包した銘柄オブジェクト */
+function buildStock(raw){
+  const tf=raw.tf||{m:'up',w:'strong'};
+  let daily=raw.daily;
+  if(!daily){ // 旧データ移行: 旧tf.d から日足詳細を推定
+    const d=tf.d||'healthy';
+    daily = d==='hot'  ? {rsi:75, macd:'gc',   ma:'up',  pos:'ext'}
+          : d==='warm' ? {rsi:65, macd:'flat', ma:'mix', pos:'mid'}
+          :              {rsi:52, macd:'gc',   ma:'up',  pos:'mid'};
+  }
+  return {id:raw.id||uid(), name:raw.name||'無題', code:raw.code||'',
+    m:raw.m||{}, tf:{m:tf.m||'up', w:tf.w||'strong'}, daily,
+    note:raw.note||'', added:raw.added||Date.now()};
+}
+function evaluate(st){
+  const scores={}, marks={}; let total=0;
+  METRICS.forEach(mt=>{ const v=st.m[mt.key]; const s=mt.fn(v==null?null:v); scores[mt.key]=s; marks[mt.key]=mark(s); total+=s; });
+  const g=grade(total);
+  const s1=step1(st.m);
+  const daily=st.daily||{};
+  const dAxis=deriveD(daily);
+  const t=timing(st.tf.m, st.tf.w, dAxis);
+  const de=dailyEntry(daily);
+  return {scores, marks, total, grade:g, step1:s1, timing:t, dAxis, daily:de};
+}
+
+/* ============================================================
+   render
+   ============================================================ */
+const listEl=document.getElementById('list');
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+function sortedStocks(){
+  const arr=[...state.stocks];
+  if(sortMode==='new') arr.sort((a,b)=>(b.added||0)-(a.added||0));
+  else arr.sort((a,b)=> evaluate(b).total - evaluate(a).total);
+  return arr;
+}
+function render(){
+  const arr=sortedStocks();
+  if(!arr.length){ listEl.innerHTML=`<div class="empty"><div class="big">📈</div>まだ銘柄がありません。<br>右下の＋から指標を入れて評価しましょう。</div>`; return; }
+  listEl.innerHTML=arr.map(renderCard).join('');
+}
+function fmtVal(v,unit){ return v==null? '—' : (v+unit); }
+
+function renderCard(st){
+  const e=evaluate(st);
+  const g=e.grade, tf=st.tf;
+  const stepChip = e.step1.pass
+    ? `<span class="chip step step-pass">STEP1 通過</span>`
+    : `<span class="chip step step-fail">STEP1 ${e.step1.conds.filter(c=>c.ok).length}/4</span>`;
+  return `<div class="card" data-id="${st.id}">
+    <div class="evhead" onclick="toggleCard('${st.id}')">
+      <div class="gradebadge ${gradeClass(g)}">${g}</div>
+      <div class="evtitle">
+        <h2>${esc(st.name)} ${st.code?`<span class="code">${esc(st.code)}</span>`:''}</h2>
+        <div class="evmeta">
+          <span class="chip score">質 ${e.total}/30点</span>
+          ${stepChip}
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="timing ${timingClass(e.timing.lv)}">🕐 大局：${e.timing.tag}</span>
+          <span class="timing ${timingClass(e.daily.lv)}">📅 日足：${e.daily.tag}</span>
+        </div>
+      </div>
+      <div class="chev">▶</div>
+    </div>
+    <div class="body">
+      <div class="sec">
+        <h3>② 財務・バリュエーション（10項目）</h3>
+        <table class="metrics"><tbody>
+          ${METRICS.map(mt=>{ const mk=e.marks[mt.key]; return `<tr>
+            <td class="m-name"><span class="mn">${mt.name}</span><small class="md">${mt.desc}</small></td>
+            <td class="m-val">${fmtVal(st.m[mt.key], mt.unit)}</td>
+            <td class="m-eval ${mk.c}">${mk.t}</td></tr>`; }).join('')}
+        </tbody></table>
+      </div>
+      <div class="sec">
+        <h3>① STEP1 スクリーニング4条件</h3>
+        <div class="stepgrid">
+          ${e.step1.conds.map(c=>`<div class="steprow"><span class="si ${c.ok?'ev-o':'ev-x'}">${c.ok?'○':'×'}</span><span class="st">${c.label}</span><span class="sv">${esc(c.val)}</span></div>`).join('')}
+        </div>
+      </div>
+      <div class="sec">
+        <h3>④ 大局タイミング（月足→週足で方向）</h3>
+        <div class="tf">
+          <div class="tfrow"><span class="tfk">月足</span><span class="tfv"><b>${labelOf('m',tf.m)}</b></span></div>
+          <div class="tfrow"><span class="tfk">週足</span><span class="tfv"><b>${labelOf('w',tf.w)}</b></span></div>
+          <div class="tfrow"><span class="tfk">日足</span><span class="tfv"><b>${dAxisLabel(e.dAxis)}</b> <small style="color:var(--muted)">（日足入力から自動判定）</small></span></div>
+        </div>
+        <div class="concl"><span class="ctag ${timingClass(e.timing.lv)}">${e.timing.tag}</span>${esc(e.timing.txt)}</div>
+      </div>
+      <div class="sec">
+        <h3>📅 日足エントリー（いつ買うか）</h3>
+        <table class="metrics"><tbody>
+          ${e.daily.pts.map(p=>`<tr>
+            <td class="m-name"><span class="mn">${p.name}</span></td>
+            <td class="m-val ${p.c}">${esc(p.val)}</td></tr>`).join('')}
+        </tbody></table>
+        <div class="concl"><span class="ctag ${timingClass(e.daily.lv)}">${e.daily.tag}</span>${esc(e.daily.txt)}</div>
+      </div>
+      ${st.note&&st.note.trim()? `<div class="sec"><h3>📝 メモ</h3><div style="font-size:13.5px;white-space:pre-wrap">${esc(st.note)}</div></div>`:''}
+      <div class="evactions">
+        <button onclick="editStock('${st.id}')">✏️ 編集</button>
+        <button class="danger" onclick="delStock('${st.id}')">🗑 削除</button>
+      </div>
+    </div>
+  </div>`;
+}
+function labelOf(axis,k){ const f=(TF[axis].find(x=>x.k===k)); return f? f.label : '—'; }
+
+/* open/close */
+const openCards=new Set();
+function toggleCard(id){ const el=document.querySelector(`.card[data-id="${id}"]`); el.classList.toggle('open'); if(el.classList.contains('open'))openCards.add(id); else openCards.delete(id); }
+function reopen(){ openCards.forEach(id=>{const el=document.querySelector(`.card[data-id="${id}"]`); if(el)el.classList.add('open');}); }
+function findStock(id){ return state.stocks.find(s=>s.id===id); }
+function delStock(id){ if(!confirm('この銘柄を削除しますか？'))return; state.stocks=state.stocks.filter(s=>s.id!==id); openCards.delete(id); save(); render(); }
+
+/* ============================================================
+   add / edit sheet
+   ============================================================ */
+const modal=document.getElementById('modal');
+const datamodal=document.getElementById('datamodal');
+let sel={m:'up',w:'strong'};
+let selD={macd:'gc',ma:'up',pos:'mid'};
+let smaOn=false;
+
+function buildSeg(axis){
+  const wrap=document.getElementById('f-'+axis);
+  wrap.innerHTML=TF[axis].map(o=>`<button data-k="${o.k}" class="${o.k===sel[axis]?'sel':''}" onclick="pickTF('${axis}','${o.k}')">${o.label}</button>`).join('');
+}
+function pickTF(axis,k){ sel[axis]=k; buildSeg(axis); }
+function buildDSeg(axis){
+  const wrap=document.getElementById('f-'+axis);
+  wrap.innerHTML=DAILY[axis].map(o=>`<button data-k="${o.k}" class="${o.k===selD[axis]?'sel':''}" onclick="pickD('${axis}','${o.k}')">${o.label}</button>`).join('');
+}
+function pickD(axis,k){ selD[axis]=k; buildDSeg(axis); }
+document.getElementById('f-sma-line').onclick=()=>{ smaOn=!smaOn; document.getElementById('f-sma-cb').classList.toggle('on',smaOn); document.getElementById('f-sma-cb').textContent=smaOn?'✓':''; };
+
+function numOrNull(id){ const v=document.getElementById(id).value.trim(); if(v==='')return null; const n=parseFloat(v); return isNaN(n)?null:n; }
+function setNum(id,v){ document.getElementById(id).value = (v==null?'':v); }
+
+function openSheet(st){
+  document.getElementById('sheet-title').textContent = st? '銘柄を編集' : '銘柄を評価';
+  document.getElementById('f-id').value = st? st.id : '';
+  document.getElementById('f-name').value = st? st.name : '';
+  document.getElementById('f-code').value = st? st.code : '';
+  const m = st? st.m : {};
+  setNum('f-div',m.div); setNum('f-payout',m.payout); setNum('f-per',m.per); setNum('f-pbr',m.pbr);
+  setNum('f-roe',m.roe); setNum('f-roa',m.roa); setNum('f-opm',m.opm); setNum('f-eq',m.eq);
+  setNum('f-de',m.de); setNum('f-cr',m.cr);
+  smaOn = !!m.sma; document.getElementById('f-sma-cb').classList.toggle('on',smaOn); document.getElementById('f-sma-cb').textContent=smaOn?'✓':'';
+  sel = st? {m:st.tf.m,w:st.tf.w} : {m:'up',w:'strong'};
+  const dl = st? (st.daily||{}) : {};
+  selD = {macd:dl.macd||'gc', ma:dl.ma||'up', pos:dl.pos||'mid'};
+  document.getElementById('f-rsi').value = (st && dl.rsi!=null)? dl.rsi : '';
+  buildSeg('m'); buildSeg('w'); buildDSeg('macd'); buildDSeg('ma'); buildDSeg('pos');
+  document.getElementById('f-note').value = st? (st.note||'') : '';
+  modal.classList.add('on');
+}
+document.getElementById('fab').onclick=()=>openSheet(null);
+function editStock(id){ openSheet(findStock(id)); }
+
+document.getElementById('f-go').onclick=()=>{
+  const id=document.getElementById('f-id').value;
+  const raw={
+    id: id||uid(),
+    name: document.getElementById('f-name').value.trim()||'無題',
+    code: document.getElementById('f-code').value.trim(),
+    m:{ div:numOrNull('f-div'), payout:numOrNull('f-payout'), per:numOrNull('f-per'), pbr:numOrNull('f-pbr'),
+        roe:numOrNull('f-roe'), roa:numOrNull('f-roa'), opm:numOrNull('f-opm'), eq:numOrNull('f-eq'),
+        de:numOrNull('f-de'), cr:numOrNull('f-cr'), sma:smaOn },
+    tf:{m:sel.m,w:sel.w},
+    daily:{ rsi:numOrNull('f-rsi'), macd:selD.macd, ma:selD.ma, pos:selD.pos },
+    note: document.getElementById('f-note').value,
+  };
+  if(id){ const st=findStock(id); Object.assign(st, buildStock({...raw, added:st.added})); }
+  else { const st=buildStock(raw); state.stocks.push(st); openCards.add(st.id); }
+  save(); closeModals(); render(); reopen(); toast(id?'更新しました':'評価しました');
+};
+function closeModals(){ modal.classList.remove('on'); datamodal.classList.remove('on'); }
+document.querySelectorAll('[data-close]').forEach(el=>el.onclick=closeModals);
+
+/* ============================================================
+   data menu
+   ============================================================ */
+document.getElementById('menubtn').onclick=()=>datamodal.classList.add('on');
+document.getElementById('d-export').onclick=()=>{ download(`stock_eval_backup_${today()}.json`, JSON.stringify(state,null,2), 'application/json'); toast('💾 バックアップを書き出しました'); };
+document.getElementById('d-import').onclick=()=>document.getElementById('fileinput').click();
+document.getElementById('fileinput').onchange=(e)=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const inc=JSON.parse(r.result); if(!inc.stocks)throw new Error('形式が違います');
+    const map=new Map(state.stocks.map(x=>[x.id,x])); inc.stocks.forEach(x=>map.set(x.id, buildStock(x)));
+    state.stocks=[...map.values()]; save(); render(); toast('📥 読み込み・マージしました');
+  }catch(err){ alert('読み込めませんでした：'+err.message); } e.target.value=''; };
+  r.readAsText(f);
+};
+document.getElementById('d-md').onclick=()=>{ download(`stock_eval_${today()}.md`, toMarkdown(), 'text/markdown'); toast('📝 Markdownを書き出しました'); };
+document.getElementById('d-sort-score').onclick=()=>{ sortMode='score'; save(); render(); closeModals(); toast('スコア順に並べました'); };
+document.getElementById('d-sort-new').onclick=()=>{ sortMode='new'; save(); render(); closeModals(); toast('追加順に並べました'); };
+
+function toMarkdown(){
+  let md=`# 株価評価（${today()}）\n\n`;
+  sortedStocks().forEach(st=>{
+    const e=evaluate(st);
+    md+=`## ${st.name}${st.code?'（'+st.code+'）':''} — グレード ${e.grade}（質 ${e.total}/30点）\n`;
+    md+=`- STEP1: ${e.step1.pass?'通過':'未通過（'+e.step1.conds.filter(c=>c.ok).length+'/4）'}\n`;
+    e.step1.conds.forEach(c=>{ md+=`  - ${c.ok?'○':'×'} ${c.label}（${c.val}）\n`; });
+    md+=`\n| 指標 | 値 | 評価 |\n|---|---|---|\n`;
+    METRICS.forEach(mt=>{ md+=`| ${mt.name} | ${fmtVal(st.m[mt.key],mt.unit)} | ${e.marks[mt.key].t} |\n`; });
+    md+=`\n**大局タイミング**：月足=${labelOf('m',st.tf.m)} / 週足=${labelOf('w',st.tf.w)} / 日足=${dAxisLabel(e.dAxis)}（自動）\n`;
+    md+=`→ **${e.timing.tag}**：${e.timing.txt}\n`;
+    md+=`\n**日足エントリー**：${e.daily.pts.map(p=>p.name+'='+p.val).join(' / ')}\n`;
+    md+=`→ **${e.daily.tag}**：${e.daily.txt}\n`;
+    if(st.note&&st.note.trim()) md+=`\n> メモ：${st.note.replace(/\n/g,' ')}\n`;
+    md+=`\n`;
+  });
+  md+=`\n---\n※本メモは売買推奨・投資助言ではありません。最終判断は本人。\n`;
+  return md;
+}
+function download(filename, text, mime){ const blob=new Blob([text],{type:mime}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500); }
+function today(){ const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`; }
+
+let toastTimer;
+function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('on'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('on'),1800); }
+
+render();
+</script>
+</body>
+</html>
