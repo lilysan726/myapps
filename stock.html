@@ -160,6 +160,10 @@
   .sheet .go{width:100%;margin-top:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));
     border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:650;padding:14px;cursor:pointer;font-family:inherit}
   .sheet .go:active{opacity:.85}
+  .fetchbtn{width:100%;margin:2px 0 4px;background:var(--panel2);border:1px solid var(--accent);border-radius:12px;
+    color:var(--accent);font-size:14px;font-weight:600;padding:11px;cursor:pointer;font-family:inherit}
+  .fetchbtn:active{background:rgba(78,161,255,.12)}
+  .fetchbtn:disabled{opacity:.55}
   .tmplnote{font-size:11.5px;color:var(--muted);background:var(--panel2);border-radius:10px;padding:9px 12px;margin-top:6px;line-height:1.5}
   .divider{display:flex;align-items:center;gap:10px;margin:18px 0 12px;color:var(--muted);font-size:12px}
   .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -201,6 +205,8 @@
       <div class="field"><label>銘柄名</label><input type="text" id="f-name" placeholder="例：KPP"></div>
       <div class="field"><label>コード</label><input type="text" id="f-code" placeholder="例：9274" inputmode="numeric"></div>
     </div>
+    <button type="button" class="fetchbtn" id="f-fetch">📥 コードからTradingViewの数値を取得</button>
+    <div class="tmplnote" id="f-fetch-note">コードを入れてタップ→ファンダ・日足を自動入力。※URL/ホーム画面版で動作（ローカルのファイル直開きは不可）。月足・週足は自動推定なのでチャートで要確認。</div>
 
     <div class="grp">① STEP1スクリーニング＋② 財務（質）</div>
     <div class="row2">
@@ -586,6 +592,65 @@ function openSheet(st){
 }
 document.getElementById('fab').onclick=()=>openSheet(null);
 function editStock(id){ openSheet(findStock(id)); }
+
+/* ---- TradingViewからコードで自動取得（text/plainでプリフライト回避） ---- */
+const TV_COLS = ["name","description","close","dividends_yield","price_earnings_ttm","price_book_fq",
+  "dividend_payout_ratio_ttm","return_on_equity","return_on_assets","operating_margin_ttm",
+  "total_equity_fq","total_assets_fq","debt_to_equity_fq","current_ratio_fq",
+  "RSI","MACD.macd","MACD.signal","MACD.hist","SMA5","SMA25","SMA50","SMA100","SMA150","SMA200"];
+function rnd(v,n){ if(v==null)return null; const x=parseFloat(v); return isNaN(x)?null:Math.round(x*Math.pow(10,n))/Math.pow(10,n); }
+
+async function fetchByCode(){
+  const code=document.getElementById('f-code').value.trim();
+  if(!/^\d{4}$/.test(code)){ toast('4桁のコードを入れてください'); return; }
+  const btn=document.getElementById('f-fetch'); const old=btn.textContent; btn.disabled=true; btn.textContent='取得中…';
+  try{
+    const payload={symbols:{tickers:['TSE:'+code],query:{types:[]}},columns:TV_COLS};
+    const res=await fetch('https://scanner.tradingview.com/japan/scan',
+      {method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(payload)});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const j=await res.json();
+    if(!j.data||!j.data.length) throw new Error('銘柄が見つかりません（東証コードを確認）');
+    const f={}; TV_COLS.forEach((c,i)=>f[c]=j.data[0].d[i]);
+    applyFetched(f);
+    toast('📥 取得しました。内容を確認して評価を');
+  }catch(e){
+    alert('取得できませんでした：'+e.message+'\n\n・コード違い/上場廃止\n・通信環境\n・ローカルのファイル直開き（URL/ホーム画面版で使ってください）\nの可能性があります。');
+  }finally{ btn.disabled=false; btn.textContent=old; }
+}
+function applyFetched(f){
+  if(!document.getElementById('f-name').value.trim()) document.getElementById('f-name').value = f['description']||f['name']||'';
+  setNum('f-div',    rnd(f['dividends_yield'],2));
+  setNum('f-per',    rnd(f['price_earnings_ttm'],2));
+  setNum('f-pbr',    rnd(f['price_book_fq'],2));
+  setNum('f-payout', rnd(f['dividend_payout_ratio_ttm'],1));
+  setNum('f-roe',    rnd(f['return_on_equity'],1));
+  setNum('f-roa',    rnd(f['return_on_assets'],1));
+  setNum('f-opm',    rnd(f['operating_margin_ttm'],1));
+  const eq=(f['total_equity_fq']&&f['total_assets_fq']>0)? rnd(f['total_equity_fq']/f['total_assets_fq']*100,1):null;
+  setNum('f-eq', eq);
+  setNum('f-de',     rnd(f['debt_to_equity_fq'],2));
+  setNum('f-cr',     rnd(f['current_ratio_fq'],2));
+  const close=f['close'], smas=[f['SMA50'],f['SMA100'],f['SMA150'],f['SMA200']];
+  smaOn = close!=null && smas.every(s=>s!=null && close>s);
+  document.getElementById('f-sma-cb').classList.toggle('on',smaOn); document.getElementById('f-sma-cb').textContent=smaOn?'✓':'';
+  // 日足
+  setNum('f-rsi', rnd(f['RSI'],1));
+  let hist=f['MACD.hist']; if(hist==null&&f['MACD.macd']!=null&&f['MACD.signal']!=null) hist=f['MACD.macd']-f['MACD.signal'];
+  selD.macd = (hist==null)?'flat':(hist>0?'gc':hist<0?'dc':'flat');
+  const s5=f['SMA5'],s25=f['SMA25'],s50=f['SMA50'];
+  selD.ma = (s5!=null&&s25!=null&&s50!=null)?(s5>=s25&&s25>=s50?'up':(s5<=s25&&s25<=s50?'down':'mix')):'mix';
+  let pos='mid'; if(close!=null&&s25){ const dev=(close-s25)/s25*100; pos = dev>=8?'ext':(dev<=3?'dip':'mid'); }
+  selD.pos=pos;
+  // 月足・週足（長期SMAからの推定）
+  sel.m = (close!=null&&f['SMA200']!=null&&close>=f['SMA200'])?'up':'down';
+  sel.w = (close!=null&&f['SMA50']!=null&&close>=f['SMA50'])?'strong':((close!=null&&f['SMA100']!=null&&close>=f['SMA100'])?'flat':'weak');
+  buildSeg('m'); buildSeg('w'); buildDSeg('macd'); buildDSeg('ma'); buildDSeg('pos');
+  // メモに推定注意を付記
+  const note=document.getElementById('f-note'); const warn='※月足・週足は自動推定。チャートで高値圏/ブレイクを要確認。';
+  if(!note.value.includes('自動推定')) note.value=(note.value?note.value+'\n':'')+warn;
+}
+document.getElementById('f-fetch').onclick=fetchByCode;
 
 document.getElementById('f-go').onclick=()=>{
   const id=document.getElementById('f-id').value;
